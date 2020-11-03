@@ -4,10 +4,11 @@ from node import Node
 
 class SelectionPolygon:
     def __init__(self, points, scene):
-        first_node = Node()
+        first_node = Node(self)
         print((points[0][0], points[0][1]))
         first_node.setPos(points[0][0], points[0][1])
 
+        self._selected = False
         self._nodes = [first_node]
         self._edges = []
         self._scene = scene
@@ -15,7 +16,7 @@ class SelectionPolygon:
         self._scene.addItem(first_node)
 
         for idx in range(1, len(points)):
-            new_node = Node()
+            new_node = Node(self)
             new_node.setPos(points[idx][0], points[idx][1])
             self._scene.addItem(new_node)
 
@@ -26,7 +27,7 @@ class SelectionPolygon:
             self._edges.append(new_edge)
 
         # connect last edge to first
-        new_edge = Edge(self._nodes[len(self._nodes) - 1], self._nodes[0])
+        new_edge = Edge(self._nodes[len(self._nodes) - 1], self._nodes[0], self)
         self._scene.addItem(new_edge)
         self._edges.append(new_edge)
 

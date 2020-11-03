@@ -6,15 +6,13 @@ from PyQt5.QtWidgets import QGraphicsItem
 
 
 class Edge(QGraphicsItem):
-    Pi = math.pi
-    TwoPi = 2.0 * Pi
-
     Type = QGraphicsItem.UserType + 2
 
-    def __init__(self, sourceNode, destNode):
+    def __init__(self, sourceNode, destNode, polygon):
         super(Edge, self).__init__()
 
-        self.arrowSize = 10.0
+        self._polygon = polygon
+
         self.sourcePoint = QPointF()
         self.destPoint = QPointF()
 
@@ -63,6 +61,6 @@ class Edge(QGraphicsItem):
         if line.length() == 0.0:
             return
 
-        painter.setPen(QPen(Qt.black, 1, Qt.SolidLine, Qt.RoundCap,
+        painter.setPen(QPen(Qt.green, 1, Qt.SolidLine, Qt.RoundCap,
                             Qt.RoundJoin))
         painter.drawLine(line)

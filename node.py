@@ -7,8 +7,10 @@ from PyQt5.QtWidgets import QGraphicsItem, QStyle
 class Node(QGraphicsItem):
     Type = QGraphicsItem.UserType + 1
 
-    def __init__(self):
+    def __init__(self, polygon):
         super(Node, self).__init__()
+
+        self._polygon = polygon
 
         self.edgeList = []
         self.newPos = QPointF()
