@@ -8,18 +8,23 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
     def __init__(self, parent):
         super(PhotoViewer, self).__init__(parent)
+
+        # all gravestone-denoting polygons
         self.selection_polygons = []
 
         self._box_creation_mode = False
         self._box_start_point = None
 
+        # the polygons currently selected for editing
+        self.selected_polygons = []
+
         self._zoom = 0
         self._empty = True
-        self._scene = QtWidgets.QGraphicsScene(self)
+        self.scene = QtWidgets.QGraphicsScene(self)
         self._photo = QtWidgets.QGraphicsPixmapItem()
 
-        self._scene.addItem(self._photo)
-        self.setScene(self._scene)
+        self.scene.addItem(self._photo)
+        self.setScene(self.scene)
         self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
@@ -71,11 +76,21 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             else:
                 self._zoom = 0
 
-    def toggle_drag_mode(self):
-        if self.dragMode() == QtWidgets.QGraphicsView.ScrollHandDrag:
-            self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
-        elif not self._photo.pixmap().isNull():
-            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
+    def delete_selected(self):
+        for selected in self.selected_polygons:
+            selected.deselect()
+            self.scene.removeItem(selected)
+            self.selection_polygons.remove(selected)
+
+        self.selected_polygons = []
+
+    def any_selection_nodes_under_mouse(self):
+        for selected in self.selected_polygons:
+            for node in selected._nodes:
+                if node.isUnderMouse():
+                    return True
+
+        return False
 
     def mousePressEvent(self, event):
         if not self._photo.isUnderMouse():
@@ -84,6 +99,11 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             photo_click_point = self.mapToScene(event.pos()).toPoint()
             self._box_start_point = photo_click_point
         else:
+            # this is pretty hacky and ugly but it works well
+            if not self.any_selection_nodes_under_mouse():
+                for polygon in self.selected_polygons:
+                    polygon.deselect()
+                self.selected_polygons = []
             super(PhotoViewer, self).mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
@@ -95,7 +115,11 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                               (self._box_start_point.x(), photo_click_point.y()),
                               (photo_click_point.x(), photo_click_point.y()),
                               (photo_click_point.x(), self._box_start_point.y())]
-            self.selection_polygons.append(SelectionPolygon(polygon_coords, self._scene))
+            selection_polygon = SelectionPolygon(polygon_coords, self)
+            self.selection_polygons.append(selection_polygon)
+            # self._scene.addItem(selection_polygon)
+
             self._box_creation_mode = False
+            self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
         else:
             super(PhotoViewer, self).mouseReleaseEvent(event)

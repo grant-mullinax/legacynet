@@ -22,6 +22,7 @@ class Edge(QGraphicsItem):
         self.source.addEdge(self)
         self.dest.addEdge(self)
         self.adjust()
+        self.setZValue(2)
 
     def type(self):
         return Edge.Type
@@ -43,13 +44,9 @@ class Edge(QGraphicsItem):
         if not self.source or not self.dest:
             return QRectF()
 
-        penWidth = 1.0
-        extra = (penWidth + self.arrowSize) / 2.0
-
         return QRectF(self.sourcePoint,
                       QSizeF(self.destPoint.x() - self.sourcePoint.x(),
-                             self.destPoint.y() - self.sourcePoint.y())).normalized().adjusted(-extra, -extra, extra,
-                                                                                               extra)
+                             self.destPoint.y() - self.sourcePoint.y())).normalized()
 
     def paint(self, painter, option, widget):
         if not self.source or not self.dest:

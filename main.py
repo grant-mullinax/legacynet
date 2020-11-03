@@ -1,4 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSizePolicy
 
 from photoviewer import PhotoViewer
@@ -47,9 +48,9 @@ class Window(QtWidgets.QWidget):
         self.viewer._box_creation_mode = True
         self.viewer.setDragMode(QtWidgets.QGraphicsView.NoDrag)
 
-    # def photoClicked(self, pos):
-    #     if self.viewer.dragMode() == QtWidgets.QGraphicsView.NoDrag:
-    #         self.editPixInfo.setText('%d, %d' % (pos.x(), pos.y()))
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Delete:
+            self.viewer.delete_selected()
 
 
 if __name__ == '__main__':
@@ -59,4 +60,7 @@ if __name__ == '__main__':
     window = Window()
     window.setGeometry(500, 300, 800, 600)
     window.show()
+
+    pixmap = QtGui.QPixmap('test_data/graves.png')
+    window.viewer.set_photo(QtGui.QPixmap(pixmap))
     sys.exit(app.exec_())

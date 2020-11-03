@@ -18,7 +18,7 @@ class Node(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
-        self.setZValue(1)
+        self.setZValue(5)
 
     def type(self):
         return Node.Type
@@ -69,4 +69,5 @@ class Node(QGraphicsItem):
 
     def mouseReleaseEvent(self, event):
         self.update()
+        self._polygon.update_points_from_nodes()
         super(Node, self).mouseReleaseEvent(event)
