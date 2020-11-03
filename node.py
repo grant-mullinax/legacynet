@@ -36,7 +36,7 @@ class Node(QGraphicsItem):
 
     def shape(self):
         path = QPainterPath()
-        path.addEllipse(-2.5, -2.5, 5, 5)
+        path.addEllipse(-5, -5, 10, 10)
         return path
 
     def paint(self, painter, option, widget):
@@ -52,7 +52,7 @@ class Node(QGraphicsItem):
 
         painter.setBrush(QBrush(gradient))
         painter.setPen(QPen(QtCore.Qt.black, 0))
-        painter.drawEllipse(-2, -2, 4, 4)
+        painter.drawEllipse(-5, -5, 10, 10)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:

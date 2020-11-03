@@ -23,9 +23,8 @@ class SelectionPolygon(QGraphicsPolygonItem):
         polygon = QtGui.QPolygonF(self.polygon_points)
 
         self.setPolygon(polygon)
-        self.setPen(QPen(Qt.blue, 0.5, Qt.DashLine, Qt.RoundCap, Qt.RoundJoin))
+        self.setPen(QPen(Qt.blue, 2, Qt.DashLine, Qt.RoundCap, Qt.RoundJoin))
         self.setPos(0, 0)
-        self._scene.addItem(self)
 
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)

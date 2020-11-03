@@ -58,6 +58,6 @@ class Edge(QGraphicsItem):
         if line.length() == 0.0:
             return
 
-        painter.setPen(QPen(Qt.green, 1, Qt.SolidLine, Qt.RoundCap,
+        painter.setPen(QPen(Qt.green, 2, Qt.SolidLine, Qt.RoundCap,
                             Qt.RoundJoin))
         painter.drawLine(line)

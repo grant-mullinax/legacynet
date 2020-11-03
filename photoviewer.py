@@ -1,4 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt, QPointF, QRectF
+from PyQt5.QtGui import QBrush, QPen
+from PyQt5.QtWidgets import QGraphicsRectItem
 
 from selection_polygon import SelectionPolygon
 
@@ -14,6 +17,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
         self._box_creation_mode = False
         self._box_start_point = None
+        self._box_graphic = None
 
         # the polygons currently selected for editing
         self.selected_polygons = []
@@ -98,6 +102,12 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         if self._box_creation_mode:
             photo_click_point = self.mapToScene(event.pos()).toPoint()
             self._box_start_point = photo_click_point
+
+            self._box_graphic = QGraphicsRectItem(0, 0, 1, 1)
+            self._box_graphic.setBrush(QBrush(Qt.transparent))
+            self._box_graphic.setPen(QPen(Qt.blue, 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            self._box_graphic.setPos(photo_click_point)
+            self.scene.addItem(self._box_graphic)
         else:
             # this is pretty hacky and ugly but it works well
             if not self.any_selection_nodes_under_mouse():
@@ -105,6 +115,15 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                     polygon.deselect()
                 self.selected_polygons = []
             super(PhotoViewer, self).mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._box_creation_mode and self._box_start_point is not None and self._box_graphic is not None:
+            mouse_point = self.mapToScene(event.pos()).toPoint()
+            self._box_graphic.setRect(QRectF(0,
+                                             0,
+                                             mouse_point.x() - self._box_start_point.x(),
+                                             mouse_point.y() - self._box_start_point.y()).normalized())
+        super(PhotoViewer, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if not self._photo.isUnderMouse():
@@ -117,9 +136,12 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                               (photo_click_point.x(), self._box_start_point.y())]
             selection_polygon = SelectionPolygon(polygon_coords, self)
             self.selection_polygons.append(selection_polygon)
-            # self._scene.addItem(selection_polygon)
+            self.scene.addItem(selection_polygon)
+            self.scene.removeItem(self._box_graphic)
 
             self._box_creation_mode = False
+            self._box_start_point = None
+            self._box_graphic = None
             self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
         else:
             super(PhotoViewer, self).mouseReleaseEvent(event)
