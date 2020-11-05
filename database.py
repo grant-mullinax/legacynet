@@ -74,7 +74,7 @@ def df_to_geojson(df, properties, toplx='toplx', toply='toply', toprx='toprx', t
              [row[toplx], row[toply]]]]
         for prop in properties:
             if prop == 'id' or prop == 'row' or prop == 'col':
-                feature['properties'][prop] = int(row[prop])
+                feature['properties'][prop] = int(row[prop]) if row[prop] is not None else None
             elif prop == 'centroid':
                 feature['properties'][prop] = [row[centroidx], row[centroidy]]
             else:

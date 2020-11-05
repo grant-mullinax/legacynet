@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import QSizePolicy, QLineEdit
 
 from photoviewer import PhotoViewer
 import database
+import coordmap
 
 
 class Window(QtWidgets.QWidget):
@@ -40,7 +41,6 @@ class Window(QtWidgets.QWidget):
         vert_left_layout.addWidget(self.load_btn)
         vert_left_layout.addWidget(self.create_box_btn)
         vert_left_layout.addWidget(self.export_btn)
-
 
         # Arrange layout
         grid_layout = QtWidgets.QGridLayout(self)
@@ -80,7 +80,7 @@ class Window(QtWidgets.QWidget):
         poly_edit_layout.addWidget(self.col_txtbox, 2, 1)
 
         self.poly_update = QtWidgets.QPushButton()
-        self.poly_update.setText('update')
+        self.poly_update.setText('Update')
         self.poly_update.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.poly_update.setShortcut("u")
         self.poly_update.clicked.connect(self.update_selected)
@@ -125,15 +125,25 @@ class Window(QtWidgets.QWidget):
     def export_polygons(self):
         database.create_table("testgravesite")
         for polygon in self.viewer.selection_polygons:
-            centroid = polygon.centroid()
+            width, height = self.viewer.pixmap_width_and_height()
+            centroid = coordmap.coordinate_map(polygon.centroid(),
+                                               28.713230, -81.554677,
+                                               28.718706, -81.547055,
+                                               width, height)
+            adjusted_polygon_points = [coordmap.coordinate_map(point,
+                                                               28.713230, -81.554677,
+                                                               28.718706, -81.547055,
+                                                               width, height) for point in polygon.polygon_points]
+
             database.add_entry("testgravesite", polygon.id, polygon.row, polygon.col,
-                               polygon.polygon_points[0].x(), polygon.polygon_points[0].y(),
-                               polygon.polygon_points[1].x(), polygon.polygon_points[1].y(),
-                               polygon.polygon_points[2].x(), polygon.polygon_points[2].y(),
-                               polygon.polygon_points[3].x(), polygon.polygon_points[3].y(),
+                               adjusted_polygon_points[0].x(), adjusted_polygon_points[0].y(),
+                               adjusted_polygon_points[1].x(), adjusted_polygon_points[1].y(),
+                               adjusted_polygon_points[2].x(), adjusted_polygon_points[2].y(),
+                               adjusted_polygon_points[3].x(), adjusted_polygon_points[3].y(),
                                centroid.x(), centroid.y())
 
         database.export_table("testgravesite")
+        print("export complete")
 
 
 if __name__ == '__main__':
@@ -141,6 +151,7 @@ if __name__ == '__main__':
 
     app = QtWidgets.QApplication(sys.argv)
     window = Window()
+    window.setWindowTitle("LegacyNet Editor")
     window.setGeometry(500, 300, 1000, 600)
     window.show()
 

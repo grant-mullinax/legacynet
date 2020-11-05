@@ -12,7 +12,6 @@ def isValidCemetery(cemetery_name: str) -> bool:
 # validate headstone id before inserting into table.
 def isValidID(id: int) -> bool:
     pattern = re.compile('^[0-9]+$')
-    print(id)
     return True
     if id and re.match(pattern, str(id)):
         return True
@@ -22,6 +21,7 @@ def isValidID(id: int) -> bool:
 
 # validate headstone row's and col's before inserting into table.
 def isValidOrder(rc: int) -> bool:
+    return True
     pattern = re.compile('^[0-9a-zA-Z -]+$')
     if rc and re.match(pattern, str(rc)):
         return True

@@ -107,3 +107,6 @@ class SelectionPolygon(QGraphicsPolygonItem):
             self.select()
 
         super(SelectionPolygon, self).mousePressEvent(event)
+
+    def adjusted_polygon_points(self):
+        return [self.pos() + QPointF(point[0], point[1]) for point in self.polygon_points]

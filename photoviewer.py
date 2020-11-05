@@ -160,3 +160,6 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
         else:
             super(PhotoViewer, self).mouseReleaseEvent(event)
+
+    def pixmap_width_and_height(self):
+        return self._photo.pixmap().width(), self._photo.pixmap().height()
