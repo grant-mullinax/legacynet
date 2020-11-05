@@ -13,10 +13,15 @@ class SelectionPolygon(QGraphicsPolygonItem):
     def __init__(self, points, photoviewer):
         super(SelectionPolygon, self).__init__()
 
+        self._photoviewer = photoviewer
+
+        self.id = len(self._photoviewer.selection_polygons)
+        self.row = None
+        self.col = None
+
         self._selected = False
         self._nodes = []
         self._edges = []
-        self._photoviewer = photoviewer
         self._scene = photoviewer.scene
         self.polygon_points = [QPointF(point[0], point[1]) for point in points]
 
@@ -30,6 +35,13 @@ class SelectionPolygon(QGraphicsPolygonItem):
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.setCacheMode(QGraphicsItem.DeviceCoordinateCache)
         self.setZValue(1)
+
+    def centroid(self):
+        sum_point = QPointF(0, 0)
+        for point in self.polygon_points:
+            sum_point += point
+
+        return QPointF(sum_point.x()/len(self.polygon_points), sum_point.y()/len(self.polygon_points))
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:
@@ -52,7 +64,7 @@ class SelectionPolygon(QGraphicsPolygonItem):
 
     def select(self):
         self._selected = True
-        self._photoviewer.selected_polygons.append(self)
+        self._photoviewer.add_selected_polygon(self)
 
         first_node = Node(self)
         first_node.setPos(self.polygon_points[0] + self.pos())

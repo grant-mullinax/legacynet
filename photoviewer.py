@@ -21,6 +21,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
         # the polygons currently selected for editing
         self.selected_polygons = []
+        self.update_selected = None
 
         self._zoom = 0
         self._empty = True
@@ -35,6 +36,18 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(30, 30, 30)))
         self.setFrameShape(QtWidgets.QFrame.NoFrame)
+
+    def add_selected_polygon(self, polygon):
+        self.selected_polygons.append(polygon)
+
+        if self.update_selected is not None:
+            self.update_selected(self.selected_polygons)
+
+    def remove_selected_polygon(self, polygon):
+        self.selected_polygons.remove(polygon)
+
+        if self.update_selected is not None:
+            self.update_selected(self.selected_polygons)
 
     def has_photo(self):
         return not self._empty
@@ -114,6 +127,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                 for polygon in self.selected_polygons:
                     polygon.deselect()
                 self.selected_polygons = []
+                if self.update_selected is not None:
+                    self.update_selected(self.selected_polygons)
             super(PhotoViewer, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
