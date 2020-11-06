@@ -140,6 +140,10 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                                              mouse_point.y() - self._box_start_point.y()).normalized())
         super(PhotoViewer, self).mouseMoveEvent(event)
 
+    def add_selection_polygon(self, selection_polygon):
+        self.selection_polygons.append(selection_polygon)
+        self.scene.addItem(selection_polygon)
+
     def mouseReleaseEvent(self, event):
         if not self._photo.isUnderMouse():
             return
@@ -150,8 +154,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                               (photo_click_point.x(), photo_click_point.y()),
                               (photo_click_point.x(), self._box_start_point.y())]
             selection_polygon = SelectionPolygon(polygon_coords, self)
-            self.selection_polygons.append(selection_polygon)
-            self.scene.addItem(selection_polygon)
+            self.add_selection_polygon(selection_polygon)
             self.scene.removeItem(self._box_graphic)
 
             self._box_creation_mode = False

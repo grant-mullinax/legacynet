@@ -2,10 +2,19 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QFileDialog
+from PIL.ImageQt import ImageQt
 
 from photoviewer import PhotoViewer
 import database
 import coordmap
+
+import image_cut
+import inference
+import sys
+import tensorflow as tf
+from PIL import Image
+
+from selection_polygon import SelectionPolygon
 
 
 class Window(QtWidgets.QWidget):
@@ -13,6 +22,8 @@ class Window(QtWidgets.QWidget):
         super(Window, self).__init__()
         self.viewer = PhotoViewer(self)
         self.viewer.update_selected = self.selected_updated
+
+        self.image = None
 
         # load image button
         self.load_btn = QtWidgets.QPushButton(self)
@@ -36,11 +47,20 @@ class Window(QtWidgets.QWidget):
         self.export_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.export_btn.clicked.connect(self.export_polygons)
 
+        # export button
+        self.detect_btn = QtWidgets.QPushButton(self)
+        self.detect_btn.setText('Detect')
+        self.detect_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.detect_btn.setStyleSheet("padding: 20px 15px 20px 15px")
+        self.detect_btn.clicked.connect(self.detect_gravestones)
+
         vert_left_layout = QtWidgets.QVBoxLayout()
         vert_left_layout.setAlignment(QtCore.Qt.AlignTop)
         vert_left_layout.addWidget(self.load_btn)
         vert_left_layout.addWidget(self.create_box_btn)
         vert_left_layout.addWidget(self.export_btn)
+        vert_left_layout.addStretch()
+        vert_left_layout.addWidget(self.detect_btn)
 
         # Arrange layout
         grid_layout = QtWidgets.QGridLayout(self)
@@ -89,13 +109,17 @@ class Window(QtWidgets.QWidget):
         vert_right_layout.addLayout(poly_edit_layout)
         grid_layout.addLayout(vert_right_layout, 0, 3)
 
-        vert_left_layout.addStretch()
         vert_right_layout.addStretch()
+
+        saved_model_path = 'run10/saved_model'
+        self.detect_fn = tf.saved_model.load(saved_model_path)
+        print("model loaded!")
 
     def load_image(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
                                                           "Image files (*.jpg *.gif *.png *.tiff)")
         pixmap = QtGui.QPixmap(file_name[0])
+        self.image = Image.open(file_name[0])
         self.viewer.set_photo(QtGui.QPixmap(pixmap))
 
     def box_creation_mode(self):
@@ -146,6 +170,26 @@ class Window(QtWidgets.QWidget):
         database.export_table("testgravesite", "testgravesite.geojson")
         print("export complete")
 
+    def detect_gravestones(self):
+        full_width, full_height = self.image.size
+
+        # Make the crops
+        image_cuts = image_cut.crop_image_with_padding((320, 320), 300, self.image)
+
+        # Run model on image crops
+        print(f'Running inferences...')
+        detections = inference.detect_and_combine(self.detect_fn, image_cuts,
+                                                  (full_width, full_height), 300,
+                                                  0.35)
+
+        for box in detections['detection_boxes']:
+            polygon_coords = [(box[1] * full_width, box[0] * full_height),
+                              (box[1] * full_width, box[2] * full_height),
+                              (box[3] * full_width, box[2] * full_height),
+                              (box[3] * full_width, box[0] * full_height)]
+            selection_polygon = SelectionPolygon(polygon_coords, self.viewer)
+            self.viewer.add_selection_polygon(selection_polygon)
+
 
 if __name__ == '__main__':
     import sys
@@ -156,6 +200,4 @@ if __name__ == '__main__':
     window.setGeometry(500, 300, 1000, 600)
     window.show()
 
-    pixmap = QtGui.QPixmap('test_data/graves.png')
-    window.viewer.set_photo(QtGui.QPixmap(pixmap))
     sys.exit(app.exec_())
