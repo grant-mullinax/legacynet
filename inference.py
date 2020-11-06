@@ -18,34 +18,26 @@ def scale_box_dims(box_dims: np.ndarray, full_size: tuple, stride: int,
     (y_index, x_index) = index
     return np.array([
         # y_min
-        scale_y_dim(box_dims[0], full_height, crop_height, stride,
+        scale_single_dim(box_dims[0], full_height, crop_height, stride,
                     y_index),  
         # x_min
-        scale_x_dim(box_dims[1], full_width, crop_width, stride,
+        scale_single_dim(box_dims[1], full_width, crop_width, stride,
                     x_index), 
         # y_max
-        scale_y_dim(box_dims[2], full_height, crop_height, stride,
+        scale_single_dim(box_dims[2], full_height, crop_height, stride,
                     y_index),
          # x_max
-        scale_x_dim(box_dims[3], full_width, crop_width, stride,
+        scale_single_dim(box_dims[3], full_width, crop_width, stride,
                     x_index) 
     ])
 
 
-def scale_x_dim(x: int, full_width: int, crop_width: int, stride: int,
+def scale_single_dim(pos: int, full: int, crop: int, stride: int,
                 index: int) -> float:
-    ''' Scale x_min and x_max for bounding boxes in a crop '''
-    scale = crop_width / float(full_width)
-    offset = (index * stride / float(full_width))
-    return x * scale + offset
-
-
-def scale_y_dim(y: int, full_height: int, crop_height: int, stride: int,
-                index: int) -> float:
-    ''' Scale y_min and y_max for bounding boxes in a crop '''
-    scale = crop_height / float(full_height)
-    offset = (index * stride / float(full_height))
-    return y * scale + offset
+    ''' Scale single dimension in a bounding box '''
+    scale = crop / float(full)
+    offset = (index * stride / float(full))
+    return pos * scale + offset
 
 
 def find_scaled_boxes_from_crop(crop_image: Image, index: tuple,
