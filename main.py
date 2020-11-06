@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import QSizePolicy, QLineEdit
+from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QFileDialog
 
 from photoviewer import PhotoViewer
 import database
@@ -123,6 +123,7 @@ class Window(QtWidgets.QWidget):
             polygon.col = int(self.col_txtbox.text()) if self.col_txtbox.text() != "" else None
 
     def export_polygons(self):
+        print("exporting..")
         database.create_table("testgravesite")
         for polygon in self.viewer.selection_polygons:
             width, height = self.viewer.pixmap_width_and_height()
@@ -142,7 +143,7 @@ class Window(QtWidgets.QWidget):
                                adjusted_polygon_points[3].x(), adjusted_polygon_points[3].y(),
                                centroid.x(), centroid.y())
 
-        database.export_table("testgravesite")
+        database.export_table("testgravesite", "testgravesite.geojson")
         print("export complete")
 
 

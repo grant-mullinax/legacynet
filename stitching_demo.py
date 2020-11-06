@@ -42,6 +42,8 @@ def main():
                                               (full_width, full_height), 300,
                                               0.35)
 
+    print(detections)
+
     # Visualize detections
     inference.visualize_boxes_on_full_image(image, detections)
 

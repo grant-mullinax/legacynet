@@ -41,8 +41,7 @@ def create_table(tablename: str) -> None:
     conn.close()
 
 
-def export_table(tablename: str) -> None:
-    output_filename = tablename + '.geojson'
+def export_table(tablename: str, output_filename: str) -> None:
     conn = sqlite3.connect(db_url)
     try:
         df = pd.read_sql_query(f"SELECT * FROM {tablename}", conn)
