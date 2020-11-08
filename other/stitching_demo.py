@@ -13,9 +13,7 @@
 
 '''
 
-
-import image_cut
-import inference
+from ml import inference, image_cut
 import sys
 import tensorflow as tf
 from PIL import Image

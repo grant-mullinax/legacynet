@@ -1,8 +1,6 @@
-import db
-import sqlite3
-import sys
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow, QWidget, QInputDialog, QDialog, QFormLayout, QGroupBox, QVBoxLayout, QComboBox, QLabel, QDialogButtonBox, QLineEdit, QTableWidget, QTableWidgetItem, QHeaderView
+from other import db
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import QMainWindow, QWidget, QInputDialog, QFormLayout, QGroupBox, QVBoxLayout, QComboBox, QLabel, QDialogButtonBox, QLineEdit, QTableWidget, QTableWidgetItem, QHeaderView
 
 class UI_Database(QMainWindow):
     def setupUI(self, Database):
@@ -116,7 +114,8 @@ class UI_Database(QMainWindow):
         mainOrderLayout.addWidget(orderButtonBox)
         self.setCentralWidget(central_widget)
         self.show()
-        orderButtonBox.accepted.connect(lambda: self.displayTable(db.searchTable(tablename.text(), min_id.text(), max_id.text())))
+        orderButtonBox.accepted.connect(lambda: self.displayTable(
+            db.searchTable(tablename.text(), min_id.text(), max_id.text())))
         orderButtonBox.rejected.connect(self.close)
         return 
 

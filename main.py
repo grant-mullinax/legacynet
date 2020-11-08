@@ -1,16 +1,16 @@
+import io
+
+from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QFileDialog
-from PIL.ImageQt import ImageQt
+from PyQt5.QtCore import Qt, QBuffer
+from PyQt5.QtGui import QIntValidator, QImage, QPixmap
+from PyQt5.QtWidgets import QSizePolicy, QLineEdit
 
 from photoviewer import PhotoViewer
 import database
 import coordmap
 
-import image_cut
-import inference
-import sys
+from ml import inference, image_cut
 import tensorflow as tf
 from PIL import Image
 
@@ -26,17 +26,17 @@ class Window(QtWidgets.QWidget):
         self.image = None
 
         # load image button
-        self.load_btn = QtWidgets.QPushButton(self)
+        self.load_btn = QtWidgets.QPushButton()
         self.load_btn.setText('Load image')
+        # self.load_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.load_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.load_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.load_btn.clicked.connect(self.load_image)
 
         # create box button
         self.create_box_btn = QtWidgets.QPushButton(self)
         self.create_box_btn.setText('Create box')
         self.create_box_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.create_box_btn.setStyleSheet("padding: 20px 15px 20px 15px")
+        # self.create_box_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.create_box_btn.setShortcut("h")
         self.create_box_btn.clicked.connect(self.box_creation_mode)
 
@@ -44,14 +44,14 @@ class Window(QtWidgets.QWidget):
         self.export_btn = QtWidgets.QPushButton(self)
         self.export_btn.setText('Export')
         self.export_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.export_btn.setStyleSheet("padding: 20px 15px 20px 15px")
+        # self.export_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.export_btn.clicked.connect(self.export_polygons)
 
         # export button
         self.detect_btn = QtWidgets.QPushButton(self)
         self.detect_btn.setText('Detect')
         self.detect_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.detect_btn.setStyleSheet("padding: 20px 15px 20px 15px")
+        # self.detect_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.detect_btn.clicked.connect(self.detect_gravestones)
 
         vert_left_layout = QtWidgets.QVBoxLayout()
@@ -111,18 +111,26 @@ class Window(QtWidgets.QWidget):
 
         vert_right_layout.addStretch()
 
-        saved_model_path = 'run10/saved_model'
+        saved_model_path = 'ml/run10/saved_model'
         self.detect_fn = tf.saved_model.load(saved_model_path)
         print("model loaded!")
 
     def load_image(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
                                                           "Image files (*.jpg *.gif *.png *.tiff)")
-        pixmap = QtGui.QPixmap(file_name[0])
+        # user didnt select anything
+        if file_name[0] == '':
+            return
+
+        # todo maybe fix loading it twice, i tried really hard to get it to only work once but all the methods i
+        # tried crashed mysteriously, even those in the pil library itself see toqpixmap()
         self.image = Image.open(file_name[0])
-        self.viewer.set_photo(QtGui.QPixmap(pixmap))
+        pixmap = QtGui.QPixmap(file_name[0])
+        self.viewer.set_photo(pixmap)
 
     def box_creation_mode(self):
+        if not self.viewer.has_photo():
+            return
         self.viewer._box_creation_mode = True
         self.viewer.setDragMode(QtWidgets.QGraphicsView.NoDrag)
 
@@ -130,7 +138,8 @@ class Window(QtWidgets.QWidget):
         if event.key() == Qt.Key_Delete:
             self.viewer.delete_selected()
 
-    def selected_updated(self, polygons):
+    def selected_updated(self):
+        polygons = self.viewer.selected_polygons
         if len(polygons) == 0:
             self.id_txtbox.setText("")
             self.row_txtbox.setText("")
@@ -171,7 +180,7 @@ class Window(QtWidgets.QWidget):
         print("export complete")
 
     def detect_gravestones(self):
-        full_width, full_height = self.image.size
+        width, height = self.image.size
 
         # Make the crops
         image_cuts = image_cut.crop_image_with_padding((320, 320), 300, self.image)
@@ -179,14 +188,14 @@ class Window(QtWidgets.QWidget):
         # Run model on image crops
         print(f'Running inferences...')
         detections = inference.detect_and_combine(self.detect_fn, image_cuts,
-                                                  (full_width, full_height), 300,
+                                                  (width, height), 300,
                                                   0.35)
 
         for box in detections['detection_boxes']:
-            polygon_coords = [(box[1] * full_width, box[0] * full_height),
-                              (box[1] * full_width, box[2] * full_height),
-                              (box[3] * full_width, box[2] * full_height),
-                              (box[3] * full_width, box[0] * full_height)]
+            polygon_coords = [(box[1] * width, box[0] * height),
+                              (box[1] * width, box[2] * height),
+                              (box[3] * width, box[2] * height),
+                              (box[3] * width, box[0] * height)]
             selection_polygon = SelectionPolygon(polygon_coords, self.viewer)
             self.viewer.add_selection_polygon(selection_polygon)
 

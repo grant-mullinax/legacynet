@@ -41,7 +41,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self.selected_polygons.append(polygon)
 
         if self.update_selected is not None:
-            self.update_selected(self.selected_polygons)
+            self.update_selected()
 
     def remove_selected_polygon(self, polygon):
         self.selected_polygons.remove(polygon)
@@ -51,6 +51,9 @@ class PhotoViewer(QtWidgets.QGraphicsView):
 
     def has_photo(self):
         return not self._empty
+
+    def pixmap(self):
+        return self._photo
 
     def fitInView(self, scale=True):
         rect = QtCore.QRectF(self._photo.pixmap().rect())
@@ -72,6 +75,14 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             self._empty = False
             self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
             self._photo.setPixmap(pixmap)
+
+            self.selection_polygons = []
+            self._box_creation_mode = False
+            self._box_start_point = None
+            self._box_graphic = None
+
+            for poly in self.selected_polygons:
+                self.remove_selected_polygon(poly)
         else:
             self._empty = True
             self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
@@ -128,7 +139,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                     polygon.deselect()
                 self.selected_polygons = []
                 if self.update_selected is not None:
-                    self.update_selected(self.selected_polygons)
+                    self.update_selected()
             super(PhotoViewer, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
