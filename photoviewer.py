@@ -19,6 +19,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         self._box_start_point = None
         self._box_graphic = None
 
+        self.ctrl_held = False
+
         # the polygons currently selected for editing
         self.selected_polygons = []
         self.update_selected = None
@@ -134,7 +136,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             self.scene.addItem(self._box_graphic)
         else:
             # this is pretty hacky and ugly but it works well
-            if not self.any_selection_nodes_under_mouse():
+            if not self.any_selection_nodes_under_mouse() and not self.ctrl_held:
                 for polygon in self.selected_polygons:
                     polygon.deselect()
                 self.selected_polygons = []
@@ -158,7 +160,7 @@ class PhotoViewer(QtWidgets.QGraphicsView):
     def mouseReleaseEvent(self, event):
         if not self._photo.isUnderMouse():
             return
-        if self._box_creation_mode:
+        if self._box_creation_mode and self._box_start_point is not None:
             photo_click_point = self.mapToScene(event.pos()).toPoint()
             polygon_coords = [(self._box_start_point.x(), self._box_start_point.y()),
                               (self._box_start_point.x(), photo_click_point.y()),

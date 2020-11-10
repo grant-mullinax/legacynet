@@ -17,6 +17,23 @@ from PIL import Image
 from selection_polygon import SelectionPolygon
 
 
+def all_are_same(polys, selector):
+    value = selector(polys[0])
+    for poly in polys:
+        if selector(poly) != value:
+            return False
+    return True
+
+
+def format_selection_text(polys, selector):
+    if not all_are_same(polys, selector):
+        return "..."
+    if selector(polys[0]) is not None:
+        return str(selector(polys[0]))
+    else:
+        return ""
+
+
 class Window(QtWidgets.QWidget):
     def __init__(self):
         super(Window, self).__init__()
@@ -24,6 +41,7 @@ class Window(QtWidgets.QWidget):
         self.viewer.update_selected = self.selected_updated
 
         self.image = None
+        self.detect_fn = None
 
         # load image button
         self.load_btn = QtWidgets.QPushButton()
@@ -111,10 +129,6 @@ class Window(QtWidgets.QWidget):
 
         vert_right_layout.addStretch()
 
-        saved_model_path = 'ml/run10/saved_model'
-        self.detect_fn = tf.saved_model.load(saved_model_path)
-        print("model loaded!")
-
     def load_image(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
                                                           "Image files (*.jpg *.gif *.png *.tiff)")
@@ -137,6 +151,12 @@ class Window(QtWidgets.QWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
             self.viewer.delete_selected()
+        elif event.key() == Qt.Key_Control:
+            self.viewer.ctrl_held = True
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.viewer.ctrl_held = False
 
     def selected_updated(self):
         polygons = self.viewer.selected_polygons
@@ -145,15 +165,18 @@ class Window(QtWidgets.QWidget):
             self.row_txtbox.setText("")
             self.col_txtbox.setText("")
             return
-        self.id_txtbox.setText(str(polygons[0].id) if polygons[0].id is not None else "")
-        self.row_txtbox.setText(str(polygons[0].row) if polygons[0].row is not None else "")
-        self.col_txtbox.setText(str(polygons[0].col) if polygons[0].col is not None else "")
+        self.id_txtbox.setText(format_selection_text(polygons, lambda p: p.id))
+        self.row_txtbox.setText(format_selection_text(polygons, lambda p: p.row))
+        self.col_txtbox.setText(format_selection_text(polygons, lambda p: p.col))
 
     def update_selected(self):
         for polygon in self.viewer.selected_polygons:
-            polygon.id = int(self.id_txtbox.text()) if self.id_txtbox.text() != "" else None
-            polygon.row = int(self.row_txtbox.text()) if self.row_txtbox.text() != "" else None
-            polygon.col = int(self.col_txtbox.text()) if self.col_txtbox.text() != "" else None
+            if self.id_txtbox.text() != "":
+                polygon.id = int(self.id_txtbox.text())
+            if self.row_txtbox.text() != "":
+                polygon.row = int(self.row_txtbox.text())
+            if self.col_txtbox.text() != "":
+                polygon.col = int(self.col_txtbox.text())
 
     def export_polygons(self):
         print("exporting..")
@@ -180,6 +203,11 @@ class Window(QtWidgets.QWidget):
         print("export complete")
 
     def detect_gravestones(self):
+        if self.detect_fn is None:
+            saved_model_path = 'ml/run10/saved_model'
+            self.detect_fn = tf.saved_model.load(saved_model_path)
+        print("model loaded!")
+
         width, height = self.image.size
 
         # Make the crops

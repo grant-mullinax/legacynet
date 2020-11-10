@@ -41,7 +41,7 @@ def create_table(tablename: str) -> None:
     conn.close()
 
 
-def export_table(tablename: str, output_filename: str) -> None:
+def get_gravestones(tablename: str):
     conn = sqlite3.connect(db_url)
     try:
         df = pd.read_sql_query(f"SELECT * FROM {tablename}", conn)
@@ -57,6 +57,12 @@ def export_table(tablename: str, output_filename: str) -> None:
         return
     conn.commit()
     conn.close()
+
+    return df
+
+
+def export_table(tablename: str, output_filename: str) -> None:
+    df = get_gravestones(tablename)
     properties = ['id', 'row', 'col', 'centroid']
     geojson = df_to_geojson(df, properties)
     with open(output_filename, 'w') as output_file:
