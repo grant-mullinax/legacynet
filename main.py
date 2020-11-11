@@ -249,11 +249,11 @@ class Window(QtWidgets.QWidget):
 
     def update_selected(self):
         for polygon in self.viewer.selected_polygons:
-            if self.id_txtbox.text() != "":
+            if self.id_txtbox.text() != "" and self.id_txtbox.text() != "...":
                 polygon.id = int(self.id_txtbox.text())
-            if self.row_txtbox.text() != "":
+            if self.row_txtbox.text() != "" and self.row_txtbox.text() != "...":
                 polygon.row = int(self.row_txtbox.text())
-            if self.col_txtbox.text() != "":
+            if self.col_txtbox.text() != "" and self.col_txtbox.text() != "...":
                 polygon.col = int(self.col_txtbox.text())
 
     def export_as_database(self):

@@ -159,7 +159,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                             max_dist = dist
 
                     np_centroid = np.array([centroid.x(), centroid.y()])
-                    distance_from_line = np.abs(np.cross(line[1] - line[0], line[0] - np_centroid)) / norm(line[0] - line[1])
+                    distance_from_line = np.abs(np.cross(line[1] - line[0], line[0] - np_centroid)) / norm(
+                        line[0] - line[1])
 
                     if distance_from_line <= max_dist:
                         polygon.select()
