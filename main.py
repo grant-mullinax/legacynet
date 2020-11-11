@@ -232,8 +232,11 @@ class Window(QtWidgets.QWidget):
         if event.key() == Qt.Key_Control:
             self.viewer.ctrl_held = False
         elif event.key() == Qt.Key_Shift:
+            self.viewer.scene.removeItem(self.viewer.line_graphic)
+
             self.viewer.line_selection_mode = False
             self.viewer.start_line_select = None
+            self.viewer.line_graphic = None
             self.viewer.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
 
     def selected_updated(self):
