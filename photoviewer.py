@@ -135,6 +135,12 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         if self.update_selected is not None:
             self.update_selected()
 
+    def remove_all(self):
+        ''' Delete all polygons '''
+        for polygon in self.selection_polygons:
+            self.scene.removeItem(polygon)
+        self.selection_polygons.clear()
+
     def mousePressEvent(self, event):
         if not self._photo.isUnderMouse():
             return
