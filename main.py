@@ -60,11 +60,11 @@ class Window(QtWidgets.QWidget):
         self.create_box_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         # self.create_box_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.create_box_btn.setShortcut("h")
-        self.create_box_btn.clicked.connect(self.box_creation_mode)
+        self.create_box_btn.clicked.connect(self.enable_box_creation_mode)
 
         # import button
         self.import_btn = QtWidgets.QPushButton(self)
-        self.import_btn.setText('Import')
+        self.import_btn.setText('Open database')
         self.import_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.import_btn.clicked.connect(self.open_db)
 
@@ -198,13 +198,7 @@ class Window(QtWidgets.QWidget):
         self.table_select.addItems(self.database_manager.get_tables())
 
     def load_db(self):
-        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '',
-                                                          "Database files (*.db)")
-        # user didnt select anything
-        if file_name[0] == '':
-            return
-
-        dataframe = self.database_manager.get_gravestones(self.table_select.currentText(), file_name[0])
+        dataframe = self.database_manager.get_gravestones(self.table_select.currentText())
         for _, row in dataframe.iterrows():
             polygon_coords = [QPointF(row['toplx'], row['toply']),
                               QPointF(row['toprx'], row['topry']),
@@ -216,12 +210,13 @@ class Window(QtWidgets.QWidget):
                                                           28.718706, -81.547055,
                                                           width, height) for point in polygon_coords]
             selection_polygon = SelectionPolygon(adjusted_polygon_points, self.viewer)
+
             self.viewer.add_selection_polygon(selection_polygon)
 
-    def box_creation_mode(self):
+    def enable_box_creation_mode(self):
         if not self.viewer.has_photo():
             return
-        self.viewer._box_creation_mode = True
+        self.viewer.box_creation_mode = True
         self.viewer.setDragMode(QtWidgets.QGraphicsView.NoDrag)
 
     def keyPressEvent(self, event):
@@ -229,10 +224,17 @@ class Window(QtWidgets.QWidget):
             self.viewer.delete_selected()
         elif event.key() == Qt.Key_Control:
             self.viewer.ctrl_held = True
+        elif event.key() == Qt.Key_Shift:
+            self.viewer.line_selection_mode = True
+            self.viewer.setDragMode(QtWidgets.QGraphicsView.NoDrag)
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
             self.viewer.ctrl_held = False
+        elif event.key() == Qt.Key_Shift:
+            self.viewer.line_selection_mode = False
+            self.viewer.start_line_select = None
+            self.viewer.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
 
     def selected_updated(self):
         polygons = self.viewer.selected_polygons

@@ -2,6 +2,8 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QPointF, QRectF
 from PyQt5.QtGui import QBrush, QPen
 from PyQt5.QtWidgets import QGraphicsRectItem
+from numpy.linalg import norm
+import numpy as np
 
 from selection_polygon import SelectionPolygon
 
@@ -15,9 +17,12 @@ class PhotoViewer(QtWidgets.QGraphicsView):
         # all gravestone-denoting polygons
         self.selection_polygons = []
 
-        self._box_creation_mode = False
-        self._box_start_point = None
+        self.box_creation_mode = False
+        self.box_start_point = None
         self._box_graphic = None
+
+        self.line_selection_mode = False
+        self.start_line_select = None
 
         self.ctrl_held = False
 
@@ -79,8 +84,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             self._photo.setPixmap(pixmap)
 
             self.selection_polygons = []
-            self._box_creation_mode = False
-            self._box_start_point = None
+            self.box_creation_mode = False
+            self.box_start_point = None
             self._box_graphic = None
 
             for poly in self.selected_polygons:
@@ -125,15 +130,39 @@ class PhotoViewer(QtWidgets.QGraphicsView):
     def mousePressEvent(self, event):
         if not self._photo.isUnderMouse():
             return
-        if self._box_creation_mode:
+        if self.box_creation_mode:
             photo_click_point = self.mapToScene(event.pos()).toPoint()
-            self._box_start_point = photo_click_point
+            self.box_start_point = photo_click_point
 
             self._box_graphic = QGraphicsRectItem(0, 0, 1, 1)
             self._box_graphic.setBrush(QBrush(Qt.transparent))
             self._box_graphic.setPen(QPen(Qt.blue, 2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
             self._box_graphic.setPos(photo_click_point)
             self.scene.addItem(self._box_graphic)
+        elif self.line_selection_mode:
+            photo_click_point = self.mapToScene(event.pos()).toPoint()
+
+            if self.start_line_select is None:
+                self.start_line_select = photo_click_point
+            else:
+                for polygon in self.selection_polygons:
+                    line = [np.array([photo_click_point.x(), photo_click_point.y()]),
+                            np.array([self.start_line_select.x(), self.start_line_select.y()])]
+                    centroid = polygon.centroid()
+
+                    # max node dist from centroid, used for approximations
+                    max_dist = 0.0
+                    for point in polygon.polygon_points:
+                        # todo manhattan length is a bad approx of euclid. dist, maybe its not worth the inaccuracy
+                        dist = (point - centroid).manhattanLength()
+                        if dist > max_dist:
+                            max_dist = dist
+
+                    np_centroid = np.array([centroid.x(), centroid.y()])
+                    distance_from_line = np.abs(np.cross(line[1] - line[0], line[0] - np_centroid)) / norm(line[0] - line[1])
+
+                    if distance_from_line <= max_dist:
+                        polygon.select()
         else:
             # this is pretty hacky and ugly but it works well
             if not self.any_selection_nodes_under_mouse() and not self.ctrl_held:
@@ -145,12 +174,12 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             super(PhotoViewer, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self._box_creation_mode and self._box_start_point is not None and self._box_graphic is not None:
+        if self.box_creation_mode and self.box_start_point is not None and self._box_graphic is not None:
             mouse_point = self.mapToScene(event.pos()).toPoint()
             self._box_graphic.setRect(QRectF(0,
                                              0,
-                                             mouse_point.x() - self._box_start_point.x(),
-                                             mouse_point.y() - self._box_start_point.y()).normalized())
+                                             mouse_point.x() - self.box_start_point.x(),
+                                             mouse_point.y() - self.box_start_point.y()).normalized())
         super(PhotoViewer, self).mouseMoveEvent(event)
 
     def add_selection_polygon(self, selection_polygon):
@@ -160,18 +189,18 @@ class PhotoViewer(QtWidgets.QGraphicsView):
     def mouseReleaseEvent(self, event):
         if not self._photo.isUnderMouse():
             return
-        if self._box_creation_mode and self._box_start_point is not None:
+        if self.box_creation_mode and self.box_start_point is not None:
             photo_click_point = self.mapToScene(event.pos()).toPoint()
-            polygon_coords = [QPointF(self._box_start_point.x(), self._box_start_point.y()),
-                              QPointF(self._box_start_point.x(), photo_click_point.y()),
+            polygon_coords = [QPointF(self.box_start_point.x(), self.box_start_point.y()),
+                              QPointF(self.box_start_point.x(), photo_click_point.y()),
                               QPointF(photo_click_point.x(), photo_click_point.y()),
-                              QPointF(photo_click_point.x(), self._box_start_point.y())]
+                              QPointF(photo_click_point.x(), self.box_start_point.y())]
             selection_polygon = SelectionPolygon(polygon_coords, self)
             self.add_selection_polygon(selection_polygon)
             self.scene.removeItem(self._box_graphic)
 
-            self._box_creation_mode = False
-            self._box_start_point = None
+            self.box_creation_mode = False
+            self.box_start_point = None
             self._box_graphic = None
             self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
         else:
