@@ -1,11 +1,13 @@
 import io
+import json
 
 from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QBuffer, QPointF
-from PyQt5.QtGui import QIntValidator, QImage, QPixmap
+from PyQt5.QtCore import Qt, QBuffer, QPointF, QRegExp
+from PyQt5.QtGui import QIntValidator, QImage, QPixmap, QRegExpValidator
 from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog
 
+from QPropertyLineEdit import QPropertyLineEdit
 from photoviewer import PhotoViewer
 from database import Database
 import coordmap
@@ -66,12 +68,17 @@ class Window(QtWidgets.QWidget):
         self.import_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.import_btn.clicked.connect(self.open_db)
 
-        # export button
-        self.export_btn = QtWidgets.QPushButton(self)
-        self.export_btn.setText('Export')
-        self.export_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # self.export_btn.setStyleSheet("padding: 20px 15px 20px 15px")
-        self.export_btn.clicked.connect(self.export_polygons)
+        # export db button
+        self.export_db_btn = QtWidgets.QPushButton(self)
+        self.export_db_btn.setText('Export db')
+        self.export_db_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.export_db_btn.clicked.connect(self.export_as_database)
+
+        # export js button
+        self.export_js_btn = QtWidgets.QPushButton(self)
+        self.export_js_btn.setText('Export geojson')
+        self.export_js_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.export_js_btn.clicked.connect(self.export_as_geojson)
 
         # export button
         self.detect_btn = QtWidgets.QPushButton(self)
@@ -85,7 +92,8 @@ class Window(QtWidgets.QWidget):
         vert_left_layout.addWidget(self.load_btn)
         vert_left_layout.addWidget(self.create_box_btn)
         vert_left_layout.addWidget(self.import_btn)
-        vert_left_layout.addWidget(self.export_btn)
+        vert_left_layout.addWidget(self.export_db_btn)
+        vert_left_layout.addWidget(self.export_js_btn)
         vert_left_layout.addStretch()
         vert_left_layout.addWidget(self.detect_btn)
         # END CREATE LEFT LAYOUT
@@ -110,31 +118,40 @@ class Window(QtWidgets.QWidget):
         self.create_table_btn.clicked.connect(self.create_table_popup)
         vert_right_layout.addWidget(self.create_table_btn)
 
+        self.poly_edit_label = QtWidgets.QLabel(self)
+        self.poly_edit_label.setText('Poly Edit')
+        self.poly_edit_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        vert_right_layout.addWidget(self.poly_edit_label)
+
+        # QIntValidator allows commas for some reason- and thats a problem. so we make our own
+        integer_validator = QRegExpValidator(QRegExp("[0-9]*"))
+
         poly_edit_layout = QtWidgets.QGridLayout()
         self.id_label = QtWidgets.QLabel()
         self.id_label.setText("id")
         poly_edit_layout.addWidget(self.id_label, 0, 0)
 
-        self.id_txtbox = QLineEdit(self)
+        self.id_txtbox = QPropertyLineEdit(self)
         self.id_txtbox.setMaximumWidth(100)
-        self.id_txtbox.setValidator(QIntValidator())
+        self.id_txtbox.setValidator(integer_validator)
         poly_edit_layout.addWidget(self.id_txtbox, 0, 1)
 
         self.row_label = QtWidgets.QLabel()
         self.row_label.setText("row")
         poly_edit_layout.addWidget(self.row_label, 1, 0)
 
-        self.row_txtbox = QLineEdit(self)
+        self.row_txtbox = QPropertyLineEdit(self)
         self.row_txtbox.setMaximumWidth(100)
+        self.id_txtbox.setValidator(integer_validator)
         poly_edit_layout.addWidget(self.row_txtbox, 1, 1)
 
         self.col_label = QtWidgets.QLabel()
         self.col_label.setText("col")
         poly_edit_layout.addWidget(self.col_label, 2, 0)
 
-        self.col_txtbox = QLineEdit(self)
+        self.col_txtbox = QPropertyLineEdit(self)
         self.col_txtbox.setMaximumWidth(100)
-        self.col_txtbox.setValidator(QIntValidator())
+        self.id_txtbox.setValidator(integer_validator)
         poly_edit_layout.addWidget(self.col_txtbox, 2, 1)
 
         self.poly_update = QtWidgets.QPushButton()
@@ -170,7 +187,7 @@ class Window(QtWidgets.QWidget):
         self.viewer.set_photo(pixmap)
 
     def open_db(self):
-        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
+        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '',
                                                           "Database files (*.db)")
         # user didnt select anything
         if file_name[0] == '':
@@ -181,7 +198,7 @@ class Window(QtWidgets.QWidget):
         self.table_select.addItems(self.database_manager.get_tables())
 
     def load_db(self):
-        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
+        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '',
                                                           "Database files (*.db)")
         # user didnt select anything
         if file_name[0] == '':
@@ -237,9 +254,8 @@ class Window(QtWidgets.QWidget):
             if self.col_txtbox.text() != "":
                 polygon.col = int(self.col_txtbox.text())
 
-    def export_polygons(self):
+    def export_as_database(self):
         print("exporting..")
-        self.database_manager.create_table(self.table_select.currentText())
         for polygon in self.viewer.selection_polygons:
             width, height = self.viewer.pixmap_width_and_height()
             centroid = coordmap.coordinate_map(polygon.centroid(),
@@ -252,14 +268,43 @@ class Window(QtWidgets.QWidget):
                                                                width, height) for point in polygon.polygon_points]
 
             self.database_manager.add_entry(self.table_select.currentText(), polygon.id, polygon.row, polygon.col,
-                               toplx=adjusted_polygon_points[0].x(), toply=adjusted_polygon_points[0].y(),
-                               toprx=adjusted_polygon_points[1].x(), topry=adjusted_polygon_points[1].y(),
-                               botrx=adjusted_polygon_points[2].x(), botry=adjusted_polygon_points[2].y(),
-                               botlx=adjusted_polygon_points[3].x(), botly=adjusted_polygon_points[3].y(),
-                               centroidx=centroid.x(), centroidy=centroid.y())
-
-        self.database_manager.export_table(self.table_select.currentText(), "testgravesite.geojson")
+                                            toplx=adjusted_polygon_points[0].x(), toply=adjusted_polygon_points[0].y(),
+                                            toprx=adjusted_polygon_points[1].x(), topry=adjusted_polygon_points[1].y(),
+                                            botrx=adjusted_polygon_points[2].x(), botry=adjusted_polygon_points[2].y(),
+                                            botlx=adjusted_polygon_points[3].x(), botly=adjusted_polygon_points[3].y(),
+                                            centroidx=centroid.x(), centroidy=centroid.y())
         print("export complete")
+
+    def export_as_geojson(self) -> dict:
+        geojson = {'type': 'FeatureCollection', 'name': self.table_select.currentText(), 'features': []}
+        for polygon in self.viewer.selection_polygons:
+            width, height = self.viewer.pixmap_width_and_height()
+            centroid = coordmap.coordinate_map(polygon.centroid(),
+                                               28.713230, -81.554677,
+                                               28.718706, -81.547055,
+                                               width, height)
+            adjusted_polygon_points = [coordmap.coordinate_map(point,
+                                                               28.713230, -81.554677,
+                                                               28.718706, -81.547055,
+                                                               width, height) for point in polygon.polygon_points]
+            feature = {'type': 'Feature', 'properties': {}, 'geometry': {'type': 'MultiPolygon', 'coordinates': []}}
+            feature['geometry']['coordinates'] = [
+                [adjusted_polygon_points[0].x(), adjusted_polygon_points[0].y()],
+                [adjusted_polygon_points[1].x(), adjusted_polygon_points[1].y()],
+                [adjusted_polygon_points[2].x(), adjusted_polygon_points[2].y()],
+                [adjusted_polygon_points[3].x(), adjusted_polygon_points[3].y()],
+                [adjusted_polygon_points[0].x(), adjusted_polygon_points[0].y()]]
+            feature['properties']['id'] = polygon.id
+            feature['properties']['row'] = polygon.row
+            feature['properties']['col'] = polygon.col
+            feature['properties']['centroid'] = [centroid.x(), centroid.y()]
+            geojson['features'].append(feature)
+
+        file_name = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
+                                                          "Geojson File (*.geojson)")
+
+        with open(file_name[0], 'w') as output_file:
+            json.dump(geojson, output_file, indent=2)
 
     def detect_gravestones(self):
         if self.detect_fn is None:
