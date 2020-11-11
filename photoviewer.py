@@ -162,10 +162,10 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             return
         if self._box_creation_mode and self._box_start_point is not None:
             photo_click_point = self.mapToScene(event.pos()).toPoint()
-            polygon_coords = [(self._box_start_point.x(), self._box_start_point.y()),
-                              (self._box_start_point.x(), photo_click_point.y()),
-                              (photo_click_point.x(), photo_click_point.y()),
-                              (photo_click_point.x(), self._box_start_point.y())]
+            polygon_coords = [QPointF(self._box_start_point.x(), self._box_start_point.y()),
+                              QPointF(self._box_start_point.x(), photo_click_point.y()),
+                              QPointF(photo_click_point.x(), photo_click_point.y()),
+                              QPointF(photo_click_point.x(), self._box_start_point.y())]
             selection_polygon = SelectionPolygon(polygon_coords, self)
             self.add_selection_polygon(selection_polygon)
             self.scene.removeItem(self._box_graphic)

@@ -1,6 +1,14 @@
 import re
 
 
+def validate_cemetery_name(cemetery_name: str) -> bool:
+    pattern = re.compile('^[a-zA-Z ]+$')
+    if cemetery_name and re.match(pattern, cemetery_name):
+        return True
+    print("Cemetery name may only contain alphabetical characters or spaces.")
+    return False
+
+
 def isValidCemetery(cemetery_name: str) -> bool:
     pattern = re.compile('^[a-zA-Z ]+$')
     if cemetery_name and re.match(pattern, cemetery_name):

@@ -2,12 +2,12 @@ import io
 
 from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QBuffer
+from PyQt5.QtCore import Qt, QBuffer, QPointF
 from PyQt5.QtGui import QIntValidator, QImage, QPixmap
-from PyQt5.QtWidgets import QSizePolicy, QLineEdit
+from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog
 
 from photoviewer import PhotoViewer
-import database
+from database import Database
 import coordmap
 
 from ml import inference, image_cut
@@ -42,7 +42,9 @@ class Window(QtWidgets.QWidget):
 
         self.image = None
         self.detect_fn = None
+        self.database_manager = None
 
+        # CREATE LEFT LAYOUT
         # load image button
         self.load_btn = QtWidgets.QPushButton()
         self.load_btn.setText('Load image')
@@ -57,6 +59,12 @@ class Window(QtWidgets.QWidget):
         # self.create_box_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.create_box_btn.setShortcut("h")
         self.create_box_btn.clicked.connect(self.box_creation_mode)
+
+        # import button
+        self.import_btn = QtWidgets.QPushButton(self)
+        self.import_btn.setText('Import')
+        self.import_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.import_btn.clicked.connect(self.open_db)
 
         # export button
         self.export_btn = QtWidgets.QPushButton(self)
@@ -76,19 +84,31 @@ class Window(QtWidgets.QWidget):
         vert_left_layout.setAlignment(QtCore.Qt.AlignTop)
         vert_left_layout.addWidget(self.load_btn)
         vert_left_layout.addWidget(self.create_box_btn)
+        vert_left_layout.addWidget(self.import_btn)
         vert_left_layout.addWidget(self.export_btn)
         vert_left_layout.addStretch()
         vert_left_layout.addWidget(self.detect_btn)
+        # END CREATE LEFT LAYOUT
 
-        # Arrange layout
-        grid_layout = QtWidgets.QGridLayout(self)
-        grid_layout.setColumnStretch(1, 3)
-
-        grid_layout.addLayout(vert_left_layout, 0, 0)
-        grid_layout.addWidget(self.viewer, 0, 1)
-
+        # CREATE RIGHT LAYOUT
         vert_right_layout = QtWidgets.QVBoxLayout()
         vert_right_layout.setAlignment(QtCore.Qt.AlignTop)
+
+        self.database_label = QtWidgets.QLabel(self)
+        self.database_label.setText('DB')
+        self.database_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        vert_right_layout.addWidget(self.database_label)
+
+        self.table_select = QComboBox()
+        self.table_select.addItems([])
+        self.table_select.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        vert_right_layout.addWidget(self.table_select)
+
+        self.create_table_btn = QtWidgets.QPushButton()
+        self.create_table_btn.setText('Create Table')
+        self.create_table_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.create_table_btn.clicked.connect(self.create_table_popup)
+        vert_right_layout.addWidget(self.create_table_btn)
 
         poly_edit_layout = QtWidgets.QGridLayout()
         self.id_label = QtWidgets.QLabel()
@@ -125,9 +145,16 @@ class Window(QtWidgets.QWidget):
         poly_edit_layout.addWidget(self.poly_update, 3, 1)
 
         vert_right_layout.addLayout(poly_edit_layout)
-        grid_layout.addLayout(vert_right_layout, 0, 3)
-
         vert_right_layout.addStretch()
+        # END CREATE RIGHT LAYOUT
+
+        # arrange layout
+        grid_layout = QtWidgets.QGridLayout(self)
+        grid_layout.setColumnStretch(1, 3)
+
+        grid_layout.addLayout(vert_left_layout, 0, 0)
+        grid_layout.addWidget(self.viewer, 0, 1)
+        grid_layout.addLayout(vert_right_layout, 0, 3)
 
     def load_image(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
@@ -141,6 +168,38 @@ class Window(QtWidgets.QWidget):
         self.image = Image.open(file_name[0])
         pixmap = QtGui.QPixmap(file_name[0])
         self.viewer.set_photo(pixmap)
+
+    def open_db(self):
+        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
+                                                          "Database files (*.db)")
+        # user didnt select anything
+        if file_name[0] == '':
+            return
+
+        self.database_manager = Database(file_name[0])
+        self.table_select.clear()
+        self.table_select.addItems(self.database_manager.get_tables())
+
+    def load_db(self):
+        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
+                                                          "Database files (*.db)")
+        # user didnt select anything
+        if file_name[0] == '':
+            return
+
+        dataframe = self.database_manager.get_gravestones(self.table_select.currentText(), file_name[0])
+        for _, row in dataframe.iterrows():
+            polygon_coords = [QPointF(row['toplx'], row['toply']),
+                              QPointF(row['toprx'], row['topry']),
+                              QPointF(row['botrx'], row['botry']),
+                              QPointF(row['botlx'], row['botly'])]
+            width, height = self.viewer.pixmap_width_and_height()
+            adjusted_polygon_points = [coordmap.pixel_map(point,
+                                                          28.713230, -81.554677,
+                                                          28.718706, -81.547055,
+                                                          width, height) for point in polygon_coords]
+            selection_polygon = SelectionPolygon(adjusted_polygon_points, self.viewer)
+            self.viewer.add_selection_polygon(selection_polygon)
 
     def box_creation_mode(self):
         if not self.viewer.has_photo():
@@ -180,7 +239,7 @@ class Window(QtWidgets.QWidget):
 
     def export_polygons(self):
         print("exporting..")
-        database.create_table("testgravesite")
+        self.database_manager.create_table(self.table_select.currentText())
         for polygon in self.viewer.selection_polygons:
             width, height = self.viewer.pixmap_width_and_height()
             centroid = coordmap.coordinate_map(polygon.centroid(),
@@ -192,14 +251,14 @@ class Window(QtWidgets.QWidget):
                                                                28.718706, -81.547055,
                                                                width, height) for point in polygon.polygon_points]
 
-            database.add_entry("testgravesite", polygon.id, polygon.row, polygon.col,
-                               adjusted_polygon_points[0].x(), adjusted_polygon_points[0].y(),
-                               adjusted_polygon_points[1].x(), adjusted_polygon_points[1].y(),
-                               adjusted_polygon_points[2].x(), adjusted_polygon_points[2].y(),
-                               adjusted_polygon_points[3].x(), adjusted_polygon_points[3].y(),
-                               centroid.x(), centroid.y())
+            self.database_manager.add_entry(self.table_select.currentText(), polygon.id, polygon.row, polygon.col,
+                               toplx=adjusted_polygon_points[0].x(), toply=adjusted_polygon_points[0].y(),
+                               toprx=adjusted_polygon_points[1].x(), topry=adjusted_polygon_points[1].y(),
+                               botrx=adjusted_polygon_points[2].x(), botry=adjusted_polygon_points[2].y(),
+                               botlx=adjusted_polygon_points[3].x(), botly=adjusted_polygon_points[3].y(),
+                               centroidx=centroid.x(), centroidy=centroid.y())
 
-        database.export_table("testgravesite", "testgravesite.geojson")
+        self.database_manager.export_table(self.table_select.currentText(), "testgravesite.geojson")
         print("export complete")
 
     def detect_gravestones(self):
@@ -220,12 +279,18 @@ class Window(QtWidgets.QWidget):
                                                   0.35)
 
         for box in detections['detection_boxes']:
-            polygon_coords = [(box[1] * width, box[0] * height),
-                              (box[1] * width, box[2] * height),
-                              (box[3] * width, box[2] * height),
-                              (box[3] * width, box[0] * height)]
+            polygon_coords = [QPointF(box[1] * width, box[0] * height),
+                              QPointF(box[1] * width, box[2] * height),
+                              QPointF(box[3] * width, box[2] * height),
+                              QPointF(box[3] * width, box[0] * height)]
             selection_polygon = SelectionPolygon(polygon_coords, self.viewer)
             self.viewer.add_selection_polygon(selection_polygon)
+
+    def create_table_popup(self):
+        item, ok = QInputDialog.getText(self, "Enter Table To Create", "Table To Create:")
+        if ok and item:
+            self.database_manager.create_table(item)
+            self.table_select.addItem(item)
 
 
 if __name__ == '__main__':

@@ -23,7 +23,7 @@ class SelectionPolygon(QGraphicsPolygonItem):
         self._nodes = []
         self._edges = []
         self._scene = photoviewer.scene
-        self.polygon_points = [QPointF(point[0], point[1]) for point in points]
+        self.polygon_points = points
 
         polygon = QtGui.QPolygonF(self.polygon_points)
 
