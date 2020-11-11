@@ -62,11 +62,17 @@ class Window(QtWidgets.QWidget):
         self.create_box_btn.setShortcut("h")
         self.create_box_btn.clicked.connect(self.enable_box_creation_mode)
 
+        # opem db button
+        self.open_db_btn = QtWidgets.QPushButton(self)
+        self.open_db_btn.setText('Open database')
+        self.open_db_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.open_db_btn.clicked.connect(self.open_db)
+
         # import button
         self.import_btn = QtWidgets.QPushButton(self)
-        self.import_btn.setText('Open database')
+        self.import_btn.setText('Import from table')
         self.import_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.import_btn.clicked.connect(self.open_db)
+        self.import_btn.clicked.connect(self.import_table)
 
         # export db button
         self.export_db_btn = QtWidgets.QPushButton(self)
@@ -91,6 +97,7 @@ class Window(QtWidgets.QWidget):
         vert_left_layout.setAlignment(QtCore.Qt.AlignTop)
         vert_left_layout.addWidget(self.load_btn)
         vert_left_layout.addWidget(self.create_box_btn)
+        vert_left_layout.addWidget(self.open_db_btn)
         vert_left_layout.addWidget(self.import_btn)
         vert_left_layout.addWidget(self.export_db_btn)
         vert_left_layout.addWidget(self.export_js_btn)
@@ -175,7 +182,7 @@ class Window(QtWidgets.QWidget):
 
     def load_image(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
-                                                          "Image files (*.jpg *.gif *.png *.tiff)")
+                                                          "Image files (*.jpg *.gif *.png *.tif *.tiff)")
         # user didnt select anything
         if file_name[0] == '':
             return
@@ -197,7 +204,7 @@ class Window(QtWidgets.QWidget):
         self.table_select.clear()
         self.table_select.addItems(self.database_manager.get_tables())
 
-    def load_db(self):
+    def import_table(self):
         dataframe = self.database_manager.get_gravestones(self.table_select.currentText())
         for _, row in dataframe.iterrows():
             polygon_coords = [QPointF(row['toplx'], row['toply']),
@@ -272,6 +279,8 @@ class Window(QtWidgets.QWidget):
                                                                28.718706, -81.547055,
                                                                width, height) for point in polygon.polygon_points]
 
+            # if
+
             self.database_manager.add_entry(self.table_select.currentText(), polygon.id, polygon.row, polygon.col,
                                             toplx=adjusted_polygon_points[0].x(), toply=adjusted_polygon_points[0].y(),
                                             toprx=adjusted_polygon_points[1].x(), topry=adjusted_polygon_points[1].y(),
@@ -313,7 +322,7 @@ class Window(QtWidgets.QWidget):
 
     def detect_gravestones(self):
         if self.detect_fn is None:
-            saved_model_path = 'ml/run10/saved_model'
+            saved_model_path = 'ml/run9/saved_model'
             self.detect_fn = tf.saved_model.load(saved_model_path)
         print("model loaded!")
 
