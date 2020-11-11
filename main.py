@@ -191,6 +191,10 @@ class Window(QtWidgets.QWidget):
         # tried crashed mysteriously, even those in the pil library itself see toqpixmap()
         self.image = Image.open(file_name[0])
         pixmap = QtGui.QPixmap(file_name[0])
+
+         # Remove any present polygons before loading
+        self.viewer.remove_all()
+        
         self.viewer.set_photo(pixmap)
 
     def open_db(self):
