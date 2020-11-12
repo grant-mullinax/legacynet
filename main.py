@@ -5,7 +5,7 @@ from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QBuffer, QPointF, QRegExp
 from PyQt5.QtGui import QIntValidator, QImage, QPixmap, QRegExpValidator
-from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog
+from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog, QMessageBox
 
 from QPropertyLineEdit import QPropertyLineEdit
 from photoviewer import PhotoViewer
@@ -216,16 +216,16 @@ class Window(QtWidgets.QWidget):
         self.vert_right_layout.addStretch()
 
     def load_image(self):
-        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
                                                           "Image files (*.jpg *.gif *.png *.tif *.tiff)")
         # user didnt select anything
-        if file_name[0] == '':
+        if file_name == '':
             return
 
         # todo maybe fix loading it twice, i tried really hard to get it to only work once but all the methods i
         # tried crashed mysteriously, even those in the pil library itself see toqpixmap()
-        self.image = Image.open(file_name[0])
-        pixmap = QtGui.QPixmap(file_name[0])
+        self.image = Image.open(file_name)
+        pixmap = QtGui.QPixmap(file_name)
 
         # Remove any present polygons before loading
         self.viewer.remove_all()
@@ -237,17 +237,23 @@ class Window(QtWidgets.QWidget):
         self.viewer.set_photo(pixmap)
 
     def open_db(self):
-        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '',
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '',
                                                           "Database files (*.db)")
         # user didnt select anything
-        if file_name[0] == '':
+        if file_name == '':
             return
 
-        self.database_manager = Database(file_name[0])
+        self.database_manager = Database(file_name)
         self.table_select.clear()
         self.table_select.addItems(self.database_manager.get_tables())
 
     def import_table(self):
+        if self.database_manager is None:
+            no_db_prompt = QMessageBox()
+            no_db_prompt.setText("Please load a database to export a table from!")
+            no_db_prompt.setWindowTitle("No database selected")
+            no_db_prompt.exec()
+            return
         dataframe = self.database_manager.get_gravestones(self.table_select.currentText())
         for _, row in dataframe.iterrows():
             polygon_coords = [QPointF(row['toplx'], row['toply']),
@@ -313,10 +319,13 @@ class Window(QtWidgets.QWidget):
         print("exporting..")
 
         if self.database_manager is None:
-            file_name = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
+            file_name, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
                                                               "Database File (*.db)")
 
-            self.database_manager = Database(file_name[0])
+            if file_name == '':
+                return
+
+            self.database_manager = Database(file_name)
             self.create_table_popup()
 
         for polygon in self.viewer.selection_polygons:
@@ -338,11 +347,11 @@ class Window(QtWidgets.QWidget):
                                             centroidx=centroid.x(), centroidy=centroid.y())
         print("export complete")
 
-    def export_as_geojson(self) -> dict:
-        file_name = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
+    def export_as_geojson(self):
+        file_name, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
                                                           "Geojson File (*.geojson)")
         # user didnt select anything
-        if file_name[0] == '':
+        if file_name == '':
             return
 
         geojson = {'type': 'FeatureCollection', 'name': self.table_select.currentText(), 'features': []}
@@ -369,7 +378,7 @@ class Window(QtWidgets.QWidget):
             feature['properties']['centroid'] = [centroid.x(), centroid.y()]
             geojson['features'].append(feature)
 
-        with open(file_name[0], 'w') as output_file:
+        with open(file_name, 'w') as output_file:
             json.dump(geojson, output_file, indent=2)
 
     def detect_gravestones(self):
