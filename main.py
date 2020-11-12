@@ -46,13 +46,29 @@ class Window(QtWidgets.QWidget):
         self.detect_fn = None
         self.database_manager = None
 
-        # CREATE LEFT LAYOUT
+        # Create the layout
+        self._create_left_layout()
+        self._create_right_layout()
+
+        # arrange layout
+        grid_layout = QtWidgets.QGridLayout(self)
+        grid_layout.setColumnStretch(1, 3)
+        grid_layout.addLayout(self.vert_left_layout, 0, 0)
+        grid_layout.addWidget(self.viewer, 0, 1)
+        grid_layout.addLayout(self.vert_right_layout, 0, 3)
+    
+    def _create_left_layout(self):
+        ''' Build left layout '''
+        self.vert_left_layout = QtWidgets.QVBoxLayout()
+        self.vert_left_layout.setAlignment(QtCore.Qt.AlignTop)
+
         # load image button
         self.load_btn = QtWidgets.QPushButton()
         self.load_btn.setText('Load image')
         # self.load_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.load_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.load_btn.clicked.connect(self.load_image)
+        self.vert_left_layout.addWidget(self.load_btn)
 
         # create box button
         self.create_box_btn = QtWidgets.QPushButton(self)
@@ -61,30 +77,38 @@ class Window(QtWidgets.QWidget):
         # self.create_box_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.create_box_btn.setShortcut("h")
         self.create_box_btn.clicked.connect(self.enable_box_creation_mode)
+        self.vert_left_layout.addWidget(self.create_box_btn)
 
         # opem db button
         self.open_db_btn = QtWidgets.QPushButton(self)
         self.open_db_btn.setText('Open database')
         self.open_db_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.open_db_btn.clicked.connect(self.open_db)
+        self.vert_left_layout.addWidget(self.open_db_btn)
 
         # import button
         self.import_btn = QtWidgets.QPushButton(self)
         self.import_btn.setText('Import from table')
         self.import_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.import_btn.clicked.connect(self.import_table)
+        self.vert_left_layout.addWidget(self.import_btn)
 
         # export db button
         self.export_db_btn = QtWidgets.QPushButton(self)
         self.export_db_btn.setText('Export db')
         self.export_db_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.export_db_btn.clicked.connect(self.export_as_database)
+        self.vert_left_layout.addWidget(self.export_db_btn)
 
         # export js button
         self.export_js_btn = QtWidgets.QPushButton(self)
         self.export_js_btn.setText('Export geojson')
         self.export_js_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.export_js_btn.clicked.connect(self.export_as_geojson)
+        self.vert_left_layout.addWidget(self.export_js_btn)
+
+        # Padding
+        self.vert_left_layout.addStretch()
 
         # export button
         self.detect_btn = QtWidgets.QPushButton(self)
@@ -92,29 +116,7 @@ class Window(QtWidgets.QWidget):
         self.detect_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         # self.detect_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.detect_btn.clicked.connect(self.detect_gravestones)
-
-        vert_left_layout = QtWidgets.QVBoxLayout()
-        vert_left_layout.setAlignment(QtCore.Qt.AlignTop)
-        vert_left_layout.addWidget(self.load_btn)
-        vert_left_layout.addWidget(self.create_box_btn)
-        vert_left_layout.addWidget(self.open_db_btn)
-        vert_left_layout.addWidget(self.import_btn)
-        vert_left_layout.addWidget(self.export_db_btn)
-        vert_left_layout.addWidget(self.export_js_btn)
-        vert_left_layout.addStretch()
-        vert_left_layout.addWidget(self.detect_btn)
-        # END CREATE LEFT LAYOUT
-
-        # Build right layout
-        self._create_right_layout()
-
-        # arrange layout
-        grid_layout = QtWidgets.QGridLayout(self)
-        grid_layout.setColumnStretch(1, 3)
-
-        grid_layout.addLayout(vert_left_layout, 0, 0)
-        grid_layout.addWidget(self.viewer, 0, 1)
-        grid_layout.addLayout(self.vert_right_layout, 0, 3)
+        self.vert_left_layout.addWidget(self.detect_btn)
     
     def _create_right_layout(self):
         ''' Build right layout '''
