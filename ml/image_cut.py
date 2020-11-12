@@ -3,7 +3,6 @@
 import os
 import sys
 from PIL import Image
-import multiprocessing as mp
 
 
 def single_crop(image: Image, top: int, left: int, right: int,
@@ -21,14 +20,7 @@ def single_crop(image: Image, top: int, left: int, right: int,
     else:
         cropped_image = image.crop((left, top, right, bottom))
 
-    # Non-RGB modes may not save as JPG, which our model requires
-    if image.mode != 'RGB':
-        image = image.convert('RGB')
     return cropped_image
-
-
-def crop_row(row, image):
-    return [single_crop(image, x[0], x[1], x[2], x[3]) for x in row]
 
 
 def crop_image_with_padding(desired_size: tuple, stride: int,
@@ -36,36 +28,36 @@ def crop_image_with_padding(desired_size: tuple, stride: int,
     """ Returns 2D list of PIL images, cropped, with stride, adding padding as necessary """
     image_list = []
 
+    # Non-RGB modes may not save as JPG, which our model requires
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+
     # Get image dimensions
     width, height = image.size
 
     # Initialize cropping coordinates
-    i = 0
-    top = 0
-    left = 0
-    right = desired_size[0]
-    bottom = desired_size[1]
+    i       = 0
+    top     = 0
+    left    = 0
+    right   = desired_size[0]
+    bottom  = desired_size[1]
 
     # Make crops
     while top < height:
         row = []
         while left < width:
             i += 1
-            crop_coord = (top, left, right, bottom)
-            row.append(crop_coord)
+            cropped_image = single_crop(image, top, left, right, bottom)
+            row.append(cropped_image)
             right += stride
-            left += stride
+            left  += stride
         image_list.append(row)
-        left = 0
-        right = desired_size[0]
-        top += stride
-        bottom += stride
+        left    = 0
+        right   = desired_size[0]
+        top     += stride
+        bottom  += stride
 
-    pool = mp.Pool(mp.cpu_count())
-    results = pool.starmap(crop_row, [(r, image) for r in image_list])
-    pool.close()
-
-    return results
+    return image_list
 
 
 if __name__ == '__main__':
