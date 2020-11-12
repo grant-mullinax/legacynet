@@ -45,14 +45,37 @@ class Window(QtWidgets.QWidget):
         self.image = None
         self.detect_fn = None
         self.database_manager = None
+        
+        # Set of buttons to disable, and enable after loading an image
+        self.enable_on_load = []
 
-        # CREATE LEFT LAYOUT
+        # Create the layout
+        self._create_left_layout()
+        self._create_right_layout()
+
+        # arrange layout
+        grid_layout = QtWidgets.QGridLayout(self)
+        grid_layout.setColumnStretch(1, 3)
+        grid_layout.addLayout(self.vert_left_layout, 0, 0)
+        grid_layout.addWidget(self.viewer, 0, 1)
+        grid_layout.addLayout(self.vert_right_layout, 0, 3)
+
+        # Disable UI buttons
+        for button in self.enable_on_load:
+            button.setEnabled(False)
+    
+    def _create_left_layout(self):
+        ''' Build left layout '''
+        self.vert_left_layout = QtWidgets.QVBoxLayout()
+        self.vert_left_layout.setAlignment(QtCore.Qt.AlignTop)
+
         # load image button
         self.load_btn = QtWidgets.QPushButton()
         self.load_btn.setText('Load image')
         # self.load_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.load_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.load_btn.clicked.connect(self.load_image)
+        self.vert_left_layout.addWidget(self.load_btn)
 
         # create box button
         self.create_box_btn = QtWidgets.QPushButton(self)
@@ -61,106 +84,120 @@ class Window(QtWidgets.QWidget):
         # self.create_box_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.create_box_btn.setShortcut("h")
         self.create_box_btn.clicked.connect(self.enable_box_creation_mode)
+        self.enable_on_load.append(self.create_box_btn)
+        self.vert_left_layout.addWidget(self.create_box_btn)
 
         # opem db button
         self.open_db_btn = QtWidgets.QPushButton(self)
         self.open_db_btn.setText('Open database')
         self.open_db_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.open_db_btn.clicked.connect(self.open_db)
+        self.enable_on_load.append(self.open_db_btn)
+        self.vert_left_layout.addWidget(self.open_db_btn)
 
         # import button
         self.import_btn = QtWidgets.QPushButton(self)
         self.import_btn.setText('Import from table')
         self.import_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.import_btn.clicked.connect(self.import_table)
+        self.enable_on_load.append(self.import_btn)
+        self.vert_left_layout.addWidget(self.import_btn)
 
         # export db button
         self.export_db_btn = QtWidgets.QPushButton(self)
         self.export_db_btn.setText('Export db')
         self.export_db_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.export_db_btn.clicked.connect(self.export_as_database)
+        self.enable_on_load.append(self.export_db_btn)
+        self.vert_left_layout.addWidget(self.export_db_btn)
 
         # export js button
         self.export_js_btn = QtWidgets.QPushButton(self)
         self.export_js_btn.setText('Export geojson')
         self.export_js_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.export_js_btn.clicked.connect(self.export_as_geojson)
+        self.enable_on_load.append(self.export_js_btn)
+        self.vert_left_layout.addWidget(self.export_js_btn)
 
-        # export button
+        # Padding
+        self.vert_left_layout.addStretch()
+
+        # Detect button
         self.detect_btn = QtWidgets.QPushButton(self)
         self.detect_btn.setText('Detect')
         self.detect_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         # self.detect_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.detect_btn.clicked.connect(self.detect_gravestones)
+        self.enable_on_load.append(self.detect_btn)
+        self.vert_left_layout.addWidget(self.detect_btn)
+    
+    def _create_right_layout(self):
+        ''' Build right layout '''
+        self.vert_right_layout = QtWidgets.QVBoxLayout()
+        self.vert_right_layout.setAlignment(QtCore.Qt.AlignTop)
 
-        vert_left_layout = QtWidgets.QVBoxLayout()
-        vert_left_layout.setAlignment(QtCore.Qt.AlignTop)
-        vert_left_layout.addWidget(self.load_btn)
-        vert_left_layout.addWidget(self.create_box_btn)
-        vert_left_layout.addWidget(self.open_db_btn)
-        vert_left_layout.addWidget(self.import_btn)
-        vert_left_layout.addWidget(self.export_db_btn)
-        vert_left_layout.addWidget(self.export_js_btn)
-        vert_left_layout.addStretch()
-        vert_left_layout.addWidget(self.detect_btn)
-        # END CREATE LEFT LAYOUT
+        # Begin 'Database' group
+        db_box_group = QtWidgets.QGroupBox('Database')
+        db_box_layout = QtWidgets.QVBoxLayout()
 
-        # CREATE RIGHT LAYOUT
-        vert_right_layout = QtWidgets.QVBoxLayout()
-        vert_right_layout.setAlignment(QtCore.Qt.AlignTop)
-
-        self.database_label = QtWidgets.QLabel(self)
-        self.database_label.setText('DB')
-        self.database_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        vert_right_layout.addWidget(self.database_label)
-
+        # DB combo box
         self.table_select = QComboBox()
         self.table_select.addItems([])
         self.table_select.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        vert_right_layout.addWidget(self.table_select)
+        db_box_layout.addWidget(self.table_select)
 
+        # Create table button
         self.create_table_btn = QtWidgets.QPushButton()
         self.create_table_btn.setText('Create Table')
         self.create_table_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.create_table_btn.clicked.connect(self.create_table_popup)
-        vert_right_layout.addWidget(self.create_table_btn)
+        db_box_layout.addWidget(self.create_table_btn)
 
-        self.poly_edit_label = QtWidgets.QLabel(self)
-        self.poly_edit_label.setText('Poly Edit')
-        self.poly_edit_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        vert_right_layout.addWidget(self.poly_edit_label)
+        # Close 'Database' group
+        db_box_group.setLayout(db_box_layout)
+        self.vert_right_layout.addWidget(db_box_group)
+
+        # Begin 'Edit Polygon' group
+        poly_edit_group = QtWidgets.QGroupBox('Edit Polygon')
 
         # QIntValidator allows commas for some reason- and thats a problem. so we make our own
         integer_validator = QRegExpValidator(QRegExp("[0-9]*"))
 
+        # ID label
         poly_edit_layout = QtWidgets.QGridLayout()
         self.id_label = QtWidgets.QLabel()
         self.id_label.setText("id")
         poly_edit_layout.addWidget(self.id_label, 0, 0)
 
+        # ID box
         self.id_txtbox = QPropertyLineEdit(self)
         self.id_txtbox.setMaximumWidth(100)
         self.id_txtbox.setValidator(integer_validator)
         poly_edit_layout.addWidget(self.id_txtbox, 0, 1)
 
+        # Row label
         self.row_label = QtWidgets.QLabel()
         self.row_label.setText("row")
         poly_edit_layout.addWidget(self.row_label, 1, 0)
 
+        # Row box
         self.row_txtbox = QPropertyLineEdit(self)
         self.row_txtbox.setMaximumWidth(100)
         self.id_txtbox.setValidator(integer_validator)
         poly_edit_layout.addWidget(self.row_txtbox, 1, 1)
 
+        # Col label
         self.col_label = QtWidgets.QLabel()
         self.col_label.setText("col")
         poly_edit_layout.addWidget(self.col_label, 2, 0)
 
+        # Col box
         self.col_txtbox = QPropertyLineEdit(self)
         self.col_txtbox.setMaximumWidth(100)
         self.id_txtbox.setValidator(integer_validator)
         poly_edit_layout.addWidget(self.col_txtbox, 2, 1)
 
+        # Update button
         self.poly_update = QtWidgets.QPushButton()
         self.poly_update.setText('Update')
         self.poly_update.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -168,17 +205,11 @@ class Window(QtWidgets.QWidget):
         self.poly_update.clicked.connect(self.update_selected)
         poly_edit_layout.addWidget(self.poly_update, 3, 1)
 
-        vert_right_layout.addLayout(poly_edit_layout)
-        vert_right_layout.addStretch()
-        # END CREATE RIGHT LAYOUT
+        # Close 'Edit Polygon' group
+        poly_edit_group.setLayout(poly_edit_layout)
+        self.vert_right_layout.addWidget(poly_edit_group)
+        self.vert_right_layout.addStretch()
 
-        # arrange layout
-        grid_layout = QtWidgets.QGridLayout(self)
-        grid_layout.setColumnStretch(1, 3)
-
-        grid_layout.addLayout(vert_left_layout, 0, 0)
-        grid_layout.addWidget(self.viewer, 0, 1)
-        grid_layout.addLayout(vert_right_layout, 0, 3)
 
     def load_image(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
@@ -194,6 +225,10 @@ class Window(QtWidgets.QWidget):
 
          # Remove any present polygons before loading
         self.viewer.remove_all()
+
+        # Enable interface buttons
+        for button in self.enable_on_load:
+            button.setEnabled(True)
         
         self.viewer.set_photo(pixmap)
 
