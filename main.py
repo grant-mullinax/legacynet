@@ -14,9 +14,13 @@ import coordmap
 
 from ml import inference, image_cut
 import tensorflow as tf
+import PIL
 from PIL import Image
 
 from selection_polygon import SelectionPolygon
+
+# turns off max size on pil img loads
+PIL.Image.MAX_IMAGE_PIXELS = None
 
 
 def all_are_same(polys, selector):
