@@ -250,7 +250,7 @@ class Window(QtWidgets.QWidget):
     def import_table(self):
         if self.database_manager is None:
             no_db_prompt = QMessageBox()
-            no_db_prompt.setText("Please load a database to export a table from!")
+            no_db_prompt.setText("Please load a database to import a table from!")
             no_db_prompt.setWindowTitle("No database selected")
             no_db_prompt.exec()
             return
