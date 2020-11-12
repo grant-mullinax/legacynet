@@ -29,7 +29,26 @@ class Database:
         except:
             conn.commit()
             conn.close()
-            print("Unknown Error Occured")
+            print("Unknown Error Occured in create")
+            return
+        conn.commit()
+        conn.close()
+
+    def delete_table(self, tablename: str) -> None:
+        conn = sqlite3.connect(self.db_url)
+        c = conn.cursor()
+        try:
+            delete = f"DROP TABLE IF EXISTS {tablename};"
+            c.execute(delete)
+        except conn.Error as e:
+            conn.commit()
+            conn.close()
+            print(e)
+            return
+        except:
+            conn.commit()
+            conn.close()
+            print("Unknown Error Occured in delete")
             return
         conn.commit()
         conn.close()
@@ -43,16 +62,16 @@ class Database:
             conn.close()
             print(e)
             return
-        except:
+        except Exception as e:
             conn.commit()
             conn.close()
-            print("Unknown Error Occured")
+
+            print(e)
             return
         conn.commit()
         conn.close()
 
         return df
-
 
     def get_tables(self) -> list:
         conn = sqlite3.connect(self.db_url)
@@ -92,7 +111,8 @@ class Database:
             geojson['features'].append(feature)
         return geojson
 
-    def add_entry(self, tablename: str, id: int, row: int, col: int, toplx: float, toply: float, toprx: float, topry: float,
+    def add_entry(self, tablename: str, id: int, row: int, col: int, toplx: float, toply: float, toprx: float,
+                  topry: float,
                   botlx: float, botly: float, botrx: float, botry: float, centroidx: float, centroidy: float) -> None:
         # id, row, col, toplx, toply, toprx, topry, botlx, botly, botrx, botry, centroidx, centroidy = values.split(',')
         if not database_validation.isValidID(id):

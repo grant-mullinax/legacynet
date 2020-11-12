@@ -75,7 +75,7 @@ class Window(QtWidgets.QWidget):
 
         # load image button
         self.load_btn = QtWidgets.QPushButton()
-        self.load_btn.setText('Load image')
+        self.load_btn.setText('Load Image')
         # self.load_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.load_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.load_btn.clicked.connect(self.load_image)
@@ -83,7 +83,7 @@ class Window(QtWidgets.QWidget):
 
         # create box button
         self.create_box_btn = QtWidgets.QPushButton(self)
-        self.create_box_btn.setText('Create box')
+        self.create_box_btn.setText('Create Box')
         self.create_box_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         # self.create_box_btn.setStyleSheet("padding: 20px 15px 20px 15px")
         self.create_box_btn.setShortcut("h")
@@ -93,7 +93,7 @@ class Window(QtWidgets.QWidget):
 
         # opem db button
         self.open_db_btn = QtWidgets.QPushButton(self)
-        self.open_db_btn.setText('Open database')
+        self.open_db_btn.setText('Open Database')
         self.open_db_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.open_db_btn.clicked.connect(self.open_db)
         self.enable_on_load.append(self.open_db_btn)
@@ -101,7 +101,7 @@ class Window(QtWidgets.QWidget):
 
         # import button
         self.import_btn = QtWidgets.QPushButton(self)
-        self.import_btn.setText('Import from table')
+        self.import_btn.setText('Import Table')
         self.import_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.import_btn.clicked.connect(self.import_table)
         self.enable_on_load.append(self.import_btn)
@@ -109,7 +109,7 @@ class Window(QtWidgets.QWidget):
 
         # export db button
         self.export_db_btn = QtWidgets.QPushButton(self)
-        self.export_db_btn.setText('Export db')
+        self.export_db_btn.setText('Export Table')
         self.export_db_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.export_db_btn.clicked.connect(self.export_as_database)
         self.enable_on_load.append(self.export_db_btn)
@@ -117,7 +117,7 @@ class Window(QtWidgets.QWidget):
 
         # export js button
         self.export_js_btn = QtWidgets.QPushButton(self)
-        self.export_js_btn.setText('Export geojson')
+        self.export_js_btn.setText('Export Geojson')
         self.export_js_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.export_js_btn.clicked.connect(self.export_as_geojson)
         self.enable_on_load.append(self.export_js_btn)
@@ -139,27 +139,6 @@ class Window(QtWidgets.QWidget):
         ''' Build right layout '''
         self.vert_right_layout = QtWidgets.QVBoxLayout()
         self.vert_right_layout.setAlignment(QtCore.Qt.AlignTop)
-
-        # Begin 'Database' group
-        db_box_group = QtWidgets.QGroupBox('Database')
-        db_box_layout = QtWidgets.QVBoxLayout()
-
-        # DB combo box
-        self.table_select = QComboBox()
-        self.table_select.addItems([])
-        self.table_select.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        db_box_layout.addWidget(self.table_select)
-
-        # Create table button
-        self.create_table_btn = QtWidgets.QPushButton()
-        self.create_table_btn.setText('Create Table')
-        self.create_table_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.create_table_btn.clicked.connect(self.create_table_popup)
-        db_box_layout.addWidget(self.create_table_btn)
-
-        # Close 'Database' group
-        db_box_group.setLayout(db_box_layout)
-        self.vert_right_layout.addWidget(db_box_group)
 
         # Begin 'Edit Polygon' group
         poly_edit_group = QtWidgets.QGroupBox('Edit Polygon')
@@ -212,6 +191,28 @@ class Window(QtWidgets.QWidget):
         # Close 'Edit Polygon' group
         poly_edit_group.setLayout(poly_edit_layout)
         self.vert_right_layout.addWidget(poly_edit_group)
+
+        # Begin 'Database' group
+        db_box_group = QtWidgets.QGroupBox('Database')
+        db_box_layout = QtWidgets.QVBoxLayout()
+
+        # DB combo box
+        self.table_select = QComboBox()
+        self.table_select.addItems([])
+        self.table_select.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        db_box_layout.addWidget(self.table_select)
+
+        # Create table button
+        self.create_table_btn = QtWidgets.QPushButton()
+        self.create_table_btn.setText('Create Table')
+        self.create_table_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.create_table_btn.clicked.connect(self.create_table_popup)
+        db_box_layout.addWidget(self.create_table_btn)
+
+        # Close 'Database' group
+        db_box_group.setLayout(db_box_layout)
+        self.vert_right_layout.addWidget(db_box_group)
+
         self.vert_right_layout.addStretch()
 
     def load_image(self):
@@ -332,6 +333,12 @@ class Window(QtWidgets.QWidget):
         print("export complete")
 
     def export_as_geojson(self) -> dict:
+        file_name = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
+                                                          "Geojson File (*.geojson)")
+        # user didnt select anything
+        if file_name[0] == '':
+            return
+
         geojson = {'type': 'FeatureCollection', 'name': self.table_select.currentText(), 'features': []}
         for polygon in self.viewer.selection_polygons:
             width, height = self.viewer.pixmap_width_and_height()
@@ -355,9 +362,6 @@ class Window(QtWidgets.QWidget):
             feature['properties']['col'] = polygon.col
             feature['properties']['centroid'] = [centroid.x(), centroid.y()]
             geojson['features'].append(feature)
-
-        file_name = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
-                                                          "Geojson File (*.geojson)")
 
         with open(file_name[0], 'w') as output_file:
             json.dump(geojson, output_file, indent=2)
