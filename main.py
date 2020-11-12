@@ -311,6 +311,14 @@ class Window(QtWidgets.QWidget):
 
     def export_as_database(self):
         print("exporting..")
+
+        if self.database_manager is None:
+            file_name = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
+                                                              "Database File (*.db)")
+
+            self.database_manager = Database(file_name[0])
+            self.create_table_popup()
+
         for polygon in self.viewer.selection_polygons:
             width, height = self.viewer.pixmap_width_and_height()
             centroid = coordmap.coordinate_map(polygon.centroid(),
@@ -321,8 +329,6 @@ class Window(QtWidgets.QWidget):
                                                                28.713230, -81.554677,
                                                                28.718706, -81.547055,
                                                                width, height) for point in polygon.polygon_points]
-
-            # if
 
             self.database_manager.add_entry(self.table_select.currentText(), polygon.id, polygon.row, polygon.col,
                                             toplx=adjusted_polygon_points[0].x(), toply=adjusted_polygon_points[0].y(),

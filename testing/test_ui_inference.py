@@ -47,6 +47,7 @@ class InferenceUiTest(unittest.TestCase):
 
         for point in results:
             self.assertIn(point, rounded_pts)
+            rounded_pts.remove(point)
 
 
 if __name__ == '__main__':
