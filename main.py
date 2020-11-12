@@ -396,7 +396,7 @@ class Window(QtWidgets.QWidget):
         print(f'Running inferences...')
         detections = inference.detect_and_combine(self.detect_fn, image_cuts,
                                                   (width, height), 300,
-                                                  0.35)
+                                                  0.50)
 
         for box in detections['detection_boxes']:
             polygon_coords = [QPointF(box[1] * width, box[0] * height),
