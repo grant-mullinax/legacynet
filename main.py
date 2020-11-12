@@ -105,72 +105,8 @@ class Window(QtWidgets.QWidget):
         vert_left_layout.addWidget(self.detect_btn)
         # END CREATE LEFT LAYOUT
 
-        # CREATE RIGHT LAYOUT
-        vert_right_layout = QtWidgets.QVBoxLayout()
-        vert_right_layout.setAlignment(QtCore.Qt.AlignTop)
-
-        self.database_label = QtWidgets.QLabel(self)
-        self.database_label.setText('DB')
-        self.database_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        vert_right_layout.addWidget(self.database_label)
-
-        self.table_select = QComboBox()
-        self.table_select.addItems([])
-        self.table_select.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        vert_right_layout.addWidget(self.table_select)
-
-        self.create_table_btn = QtWidgets.QPushButton()
-        self.create_table_btn.setText('Create Table')
-        self.create_table_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.create_table_btn.clicked.connect(self.create_table_popup)
-        vert_right_layout.addWidget(self.create_table_btn)
-
-        self.poly_edit_label = QtWidgets.QLabel(self)
-        self.poly_edit_label.setText('Poly Edit')
-        self.poly_edit_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        vert_right_layout.addWidget(self.poly_edit_label)
-
-        # QIntValidator allows commas for some reason- and thats a problem. so we make our own
-        integer_validator = QRegExpValidator(QRegExp("[0-9]*"))
-
-        poly_edit_layout = QtWidgets.QGridLayout()
-        self.id_label = QtWidgets.QLabel()
-        self.id_label.setText("id")
-        poly_edit_layout.addWidget(self.id_label, 0, 0)
-
-        self.id_txtbox = QPropertyLineEdit(self)
-        self.id_txtbox.setMaximumWidth(100)
-        self.id_txtbox.setValidator(integer_validator)
-        poly_edit_layout.addWidget(self.id_txtbox, 0, 1)
-
-        self.row_label = QtWidgets.QLabel()
-        self.row_label.setText("row")
-        poly_edit_layout.addWidget(self.row_label, 1, 0)
-
-        self.row_txtbox = QPropertyLineEdit(self)
-        self.row_txtbox.setMaximumWidth(100)
-        self.id_txtbox.setValidator(integer_validator)
-        poly_edit_layout.addWidget(self.row_txtbox, 1, 1)
-
-        self.col_label = QtWidgets.QLabel()
-        self.col_label.setText("col")
-        poly_edit_layout.addWidget(self.col_label, 2, 0)
-
-        self.col_txtbox = QPropertyLineEdit(self)
-        self.col_txtbox.setMaximumWidth(100)
-        self.id_txtbox.setValidator(integer_validator)
-        poly_edit_layout.addWidget(self.col_txtbox, 2, 1)
-
-        self.poly_update = QtWidgets.QPushButton()
-        self.poly_update.setText('Update')
-        self.poly_update.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.poly_update.setShortcut("u")
-        self.poly_update.clicked.connect(self.update_selected)
-        poly_edit_layout.addWidget(self.poly_update, 3, 1)
-
-        vert_right_layout.addLayout(poly_edit_layout)
-        vert_right_layout.addStretch()
-        # END CREATE RIGHT LAYOUT
+        # Build right layout
+        self._create_right_layout()
 
         # arrange layout
         grid_layout = QtWidgets.QGridLayout(self)
@@ -178,7 +114,87 @@ class Window(QtWidgets.QWidget):
 
         grid_layout.addLayout(vert_left_layout, 0, 0)
         grid_layout.addWidget(self.viewer, 0, 1)
-        grid_layout.addLayout(vert_right_layout, 0, 3)
+        grid_layout.addLayout(self.vert_right_layout, 0, 3)
+    
+    def _create_right_layout(self):
+        ''' Build right layout '''
+        self.vert_right_layout = QtWidgets.QVBoxLayout()
+        self.vert_right_layout.setAlignment(QtCore.Qt.AlignTop)
+
+        # Begin 'Database' group
+        db_box_group = QtWidgets.QGroupBox('Database')
+        db_box_layout = QtWidgets.QVBoxLayout()
+
+        # DB combo box
+        self.table_select = QComboBox()
+        self.table_select.addItems([])
+        self.table_select.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        db_box_layout.addWidget(self.table_select)
+
+        # Create table button
+        self.create_table_btn = QtWidgets.QPushButton()
+        self.create_table_btn.setText('Create Table')
+        self.create_table_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.create_table_btn.clicked.connect(self.create_table_popup)
+        db_box_layout.addWidget(self.create_table_btn)
+
+        # Close 'Database' group
+        db_box_group.setLayout(db_box_layout)
+        self.vert_right_layout.addWidget(db_box_group)
+
+        # Begin 'Edit Polygon' group
+        poly_edit_group = QtWidgets.QGroupBox('Edit Polygon')
+
+        # QIntValidator allows commas for some reason- and thats a problem. so we make our own
+        integer_validator = QRegExpValidator(QRegExp("[0-9]*"))
+
+        # ID label
+        poly_edit_layout = QtWidgets.QGridLayout()
+        self.id_label = QtWidgets.QLabel()
+        self.id_label.setText("id")
+        poly_edit_layout.addWidget(self.id_label, 0, 0)
+
+        # ID box
+        self.id_txtbox = QPropertyLineEdit(self)
+        self.id_txtbox.setMaximumWidth(100)
+        self.id_txtbox.setValidator(integer_validator)
+        poly_edit_layout.addWidget(self.id_txtbox, 0, 1)
+
+        # Row label
+        self.row_label = QtWidgets.QLabel()
+        self.row_label.setText("row")
+        poly_edit_layout.addWidget(self.row_label, 1, 0)
+
+        # Row box
+        self.row_txtbox = QPropertyLineEdit(self)
+        self.row_txtbox.setMaximumWidth(100)
+        self.id_txtbox.setValidator(integer_validator)
+        poly_edit_layout.addWidget(self.row_txtbox, 1, 1)
+
+        # Col label
+        self.col_label = QtWidgets.QLabel()
+        self.col_label.setText("col")
+        poly_edit_layout.addWidget(self.col_label, 2, 0)
+
+        # Col box
+        self.col_txtbox = QPropertyLineEdit(self)
+        self.col_txtbox.setMaximumWidth(100)
+        self.id_txtbox.setValidator(integer_validator)
+        poly_edit_layout.addWidget(self.col_txtbox, 2, 1)
+
+        # Update button
+        self.poly_update = QtWidgets.QPushButton()
+        self.poly_update.setText('Update')
+        self.poly_update.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.poly_update.setShortcut("u")
+        self.poly_update.clicked.connect(self.update_selected)
+        poly_edit_layout.addWidget(self.poly_update, 3, 1)
+
+        # Close 'Edit Polygon' group
+        poly_edit_group.setLayout(poly_edit_layout)
+        self.vert_right_layout.addWidget(poly_edit_group)
+        self.vert_right_layout.addStretch()
+
 
     def load_image(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
