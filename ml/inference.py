@@ -105,7 +105,8 @@ def find_scaled_boxes_from_crop(crop_image: Image, index: tuple,
 
 def detect_and_combine(detect_fn: Callable, image_cuts: list,
                        full_img_size: tuple, stride: int,
-                       score_threshold: float) -> dict:
+                       score_threshold: float,
+                       iou_threshold: float) -> dict:
     ''' Run detections on all image cuts, combine the results into a single dict '''
     # This can be hardcoded, since we are only concerned with a single class
     category_index = {0: 1}
@@ -125,7 +126,7 @@ def detect_and_combine(detect_fn: Callable, image_cuts: list,
     final_detections = reduce(fold_detections, full_detections)
 
     # Apply non max supression for overlapping boxes
-    pruned_detections = non_maximum_supression(final_detections, 0.2)
+    pruned_detections = non_maximum_supression(final_detections, iou_threshold)
 
     return pruned_detections
 
