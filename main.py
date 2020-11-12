@@ -192,7 +192,7 @@ class Window(QtWidgets.QWidget):
         self.image = Image.open(file_name[0])
         pixmap = QtGui.QPixmap(file_name[0])
 
-         # Remove any present polygons before loading
+        # Remove any present polygons before loading
         self.viewer.remove_all()
         
         self.viewer.set_photo(pixmap)

@@ -136,7 +136,8 @@ class PhotoViewer(QtWidgets.QGraphicsView):
             self.update_selected()
 
     def remove_all(self):
-        ''' Delete all polygons '''
+        """ Delete all polygons """
+        self.deselect_all()
         for polygon in self.selection_polygons:
             self.scene.removeItem(polygon)
         self.selection_polygons.clear()
