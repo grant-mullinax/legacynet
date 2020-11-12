@@ -49,7 +49,7 @@ class Window(QtWidgets.QWidget):
         self.image = None
         self.detect_fn = None
         self.database_manager = None
-        
+
         # Set of buttons to disable, and enable after loading an image
         self.enable_on_load = []
 
@@ -67,7 +67,7 @@ class Window(QtWidgets.QWidget):
         # Disable UI buttons
         for button in self.enable_on_load:
             button.setEnabled(False)
-    
+
     def _create_left_layout(self):
         ''' Build left layout '''
         self.vert_left_layout = QtWidgets.QVBoxLayout()
@@ -134,7 +134,7 @@ class Window(QtWidgets.QWidget):
         self.detect_btn.clicked.connect(self.detect_gravestones)
         self.enable_on_load.append(self.detect_btn)
         self.vert_left_layout.addWidget(self.detect_btn)
-    
+
     def _create_right_layout(self):
         ''' Build right layout '''
         self.vert_right_layout = QtWidgets.QVBoxLayout()
@@ -214,7 +214,6 @@ class Window(QtWidgets.QWidget):
         self.vert_right_layout.addWidget(poly_edit_group)
         self.vert_right_layout.addStretch()
 
-
     def load_image(self):
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
                                                           "Image files (*.jpg *.gif *.png *.tif *.tiff)")
@@ -233,7 +232,7 @@ class Window(QtWidgets.QWidget):
         # Enable interface buttons
         for button in self.enable_on_load:
             button.setEnabled(True)
-        
+
         self.viewer.set_photo(pixmap)
 
     def open_db(self):
