@@ -2,6 +2,8 @@ from PyQt5.QtGui import QPen
 from PyQt5.QtCore import Qt, QPointF
 from PyQt5.QtWidgets import QGraphicsPolygonItem, QGraphicsItem
 from PyQt5 import QtGui
+import numpy as np
+import math
 
 from edge import Edge
 from node import Node
@@ -42,6 +44,26 @@ class SelectionPolygon(QGraphicsPolygonItem):
             sum_point += point
 
         return QPointF(sum_point.x()/len(self.polygon_points), sum_point.y()/len(self.polygon_points))
+
+    def rotate(self, degrees):
+        radians = np.radians(degrees)
+        # todo this could be pulled out for all polygons but it would make it ugly, idk if the optimization is needed
+        cos_deg = math.cos(radians)
+        sin_deg = math.sin(radians)
+
+        for point, node in zip(self.polygon_points, self._nodes):
+            origin = self.centroid()
+
+            point.setX(origin.x() + cos_deg * (point.x() - origin.x()) - sin_deg * (point.y() - origin.y()))
+            point.setY(origin.y() + sin_deg * (point.x() - origin.x()) + cos_deg * (point.y() - origin.y()))
+
+            node.setPos(point + self.pos())
+
+        for edge in self._edges:
+            edge.adjust()
+
+        polygon = QtGui.QPolygonF(self.polygon_points)
+        self.setPolygon(polygon)
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.ItemPositionHasChanged:

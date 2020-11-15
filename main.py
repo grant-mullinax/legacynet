@@ -188,6 +188,14 @@ class Window(QtWidgets.QWidget):
         self.poly_update.clicked.connect(self.update_selected)
         poly_edit_layout.addWidget(self.poly_update, 3, 1)
 
+        # Rotate button
+        self.poly_rotate = QtWidgets.QPushButton()
+        self.poly_rotate.setText('Rotate')
+        self.poly_rotate.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.poly_rotate.setShortcut("r")
+        self.poly_rotate.clicked.connect(self.rotate_selected)
+        poly_edit_layout.addWidget(self.poly_rotate, 4, 1)
+
         # Close 'Edit Polygon' group
         poly_edit_group.setLayout(poly_edit_layout)
         self.vert_right_layout.addWidget(poly_edit_group)
@@ -411,6 +419,12 @@ class Window(QtWidgets.QWidget):
         if ok and item:
             self.database_manager.create_table(item)
             self.table_select.addItem(item)
+
+    def rotate_selected(self):
+        deg, ok = QInputDialog.getDouble(self, "Enter Rotation Amount", "Rotation in Degrees:")
+        if ok and deg:
+            for polygon in self.viewer.selected_polygons:
+                polygon.rotate(deg)
 
 
 if __name__ == '__main__':
