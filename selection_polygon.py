@@ -51,11 +51,12 @@ class SelectionPolygon(QGraphicsPolygonItem):
         cos_deg = math.cos(radians)
         sin_deg = math.sin(radians)
 
-        for point, node in zip(self.polygon_points, self._nodes):
-            origin = self.centroid()
+        origin = self.centroid()
 
+        for point, node in zip(self.polygon_points, self._nodes):
+            old_x = point.x()
             point.setX(origin.x() + cos_deg * (point.x() - origin.x()) - sin_deg * (point.y() - origin.y()))
-            point.setY(origin.y() + sin_deg * (point.x() - origin.x()) + cos_deg * (point.y() - origin.y()))
+            point.setY(origin.y() + sin_deg * (oldx - origin.x()) + cos_deg * (point.y() - origin.y()))
 
             node.setPos(point + self.pos())
 
