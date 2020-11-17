@@ -1,6 +1,7 @@
 import io
 import json
 import configparser
+import os
 
 from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -80,10 +81,10 @@ class Window(QtWidgets.QWidget):
         settings = parser['DEFAULT']
 
         # Discard boxes below this confidence threshold
-        self.confidence_threshold = float(settings.get('confidence_threshold', 0.45))
+        self.confidence_threshold = float(settings.get('confidence_threshold', "0.45"))
 
         # Discard boxes above this intersection over union threshold
-        self.iou_threshold = float(settings.get('iou_threshold', 0.15))
+        self.iou_threshold = float(settings.get('iou_threshold', "0.15"))
 
     def _create_left_layout(self) -> None:
         ''' Build left layout '''
@@ -205,13 +206,15 @@ class Window(QtWidgets.QWidget):
         self.poly_update.clicked.connect(self.update_selected)
         poly_edit_layout.addWidget(self.poly_update, 3, 1)
 
+        poly_edit_layout.setRowMinimumHeight(4, 8)
+
         # Rotate button
         self.poly_rotate = QtWidgets.QPushButton()
         self.poly_rotate.setText('Rotate')
         self.poly_rotate.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.poly_rotate.setShortcut("r")
         self.poly_rotate.clicked.connect(self.rotate_selected)
-        poly_edit_layout.addWidget(self.poly_rotate, 4, 1)
+        poly_edit_layout.addWidget(self.poly_rotate, 5, 1)
 
         # Close 'Edit Polygon' group
         poly_edit_group.setLayout(poly_edit_layout)
@@ -220,6 +223,11 @@ class Window(QtWidgets.QWidget):
         # Begin 'Database' group
         db_box_group = QtWidgets.QGroupBox('Database')
         db_box_layout = QtWidgets.QVBoxLayout()
+
+        # db name label
+        self.db_filename_label = QtWidgets.QLabel()
+        self.db_filename_label.setText("No database selected")
+        db_box_layout.addWidget(self.db_filename_label)
 
         # DB combo box
         self.table_select = QComboBox()
@@ -242,7 +250,7 @@ class Window(QtWidgets.QWidget):
 
     def load_image(self):
         file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
-                                                          "Image files (*.jpg *.gif *.png *.tif *.tiff)")
+                                                             "Image files (*.jpg *.gif *.png *.tif *.tiff)")
         # user didnt select anything
         if file_name == '':
             return
@@ -263,12 +271,13 @@ class Window(QtWidgets.QWidget):
 
     def open_db(self):
         file_name, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', '',
-                                                          "Database files (*.db)")
+                                                             "Database files (*.db)")
         # user didnt select anything
         if file_name == '':
             return
 
         self.database_manager = Database(file_name)
+        self.db_filename_label.setText(os.path.basename(file_name))
         self.table_select.clear()
         self.table_select.addItems(self.database_manager.get_tables())
 
@@ -345,7 +354,7 @@ class Window(QtWidgets.QWidget):
 
         if self.database_manager is None:
             file_name, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
-                                                              "Database File (*.db)")
+                                                                 "Database File (*.db)")
 
             if file_name == '':
                 return
@@ -374,7 +383,7 @@ class Window(QtWidgets.QWidget):
 
     def export_as_geojson(self):
         file_name, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '',
-                                                          "Geojson File (*.geojson)")
+                                                             "Geojson File (*.geojson)")
         # user didnt select anything
         if file_name == '':
             return
