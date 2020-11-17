@@ -1,5 +1,6 @@
 import io
 import json
+import configparser
 
 from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -43,6 +44,10 @@ def format_selection_text(polys, selector):
 class Window(QtWidgets.QWidget):
     def __init__(self):
         super(Window, self).__init__()
+
+        # Read and set configuration settings
+        self._read_config('./config.ini')
+
         self.viewer = PhotoViewer(self)
         self.viewer.update_selected = self.selected_updated
 
@@ -68,7 +73,19 @@ class Window(QtWidgets.QWidget):
         for button in self.enable_on_load:
             button.setEnabled(False)
 
-    def _create_left_layout(self):
+    def _read_config(self, filename: str) -> None:
+        ''' Read config and set default values '''
+        parser = configparser.ConfigParser()
+        parser.read(filename)
+        settings = parser['DEFAULT']
+
+        # Discard boxes below this confidence threshold
+        self.confidence_threshold = float(settings.get('confidence_threshold', 0.45))
+
+        # Discard boxes above this intersection over union threshold
+        self.iou_threshold = float(settings.get('iou_threshold', 0.15))
+
+    def _create_left_layout(self) -> None:
         ''' Build left layout '''
         self.vert_left_layout = QtWidgets.QVBoxLayout()
         self.vert_left_layout.setAlignment(QtCore.Qt.AlignTop)
@@ -135,7 +152,7 @@ class Window(QtWidgets.QWidget):
         self.enable_on_load.append(self.detect_btn)
         self.vert_left_layout.addWidget(self.detect_btn)
 
-    def _create_right_layout(self):
+    def _create_right_layout(self) -> None:
         ''' Build right layout '''
         self.vert_right_layout = QtWidgets.QVBoxLayout()
         self.vert_right_layout.setAlignment(QtCore.Qt.AlignTop)
@@ -258,7 +275,7 @@ class Window(QtWidgets.QWidget):
     def import_table(self):
         if self.database_manager is None:
             no_db_prompt = QMessageBox()
-            no_db_prompt.setText("Please load a database to export a table from!")
+            no_db_prompt.setText("Please load a database to import a table from!")
             no_db_prompt.setWindowTitle("No database selected")
             no_db_prompt.exec()
             return
@@ -404,7 +421,8 @@ class Window(QtWidgets.QWidget):
         print(f'Running inferences...')
         detections = inference.detect_and_combine(self.detect_fn, image_cuts,
                                                   (width, height), 300,
-                                                  0.35)
+                                                  self.confidence_threshold,
+                                                  self.iou_threshold)
 
         for box in detections['detection_boxes']:
             polygon_coords = [QPointF(box[1] * width, box[0] * height),
