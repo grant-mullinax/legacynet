@@ -455,6 +455,14 @@ class Window(QtWidgets.QWidget):
             self.viewer.add_selection_polygon(selection_polygon)
 
     def create_table_popup(self):
+        if self.database_manager is None:
+            no_db_prompt = QMessageBox()
+            no_db_prompt.setText("Please load a database to create a table for! You can press export with no database "
+                                 "selected to automatically create one along with a table.")
+            no_db_prompt.setWindowTitle("No database selected")
+            no_db_prompt.exec()
+            return
+
         item, ok = QInputDialog.getText(self, "Enter Table To Create", "Table To Create:")
         if ok and item:
             self.database_manager.create_table(item)
