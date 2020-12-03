@@ -7,7 +7,7 @@ from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QBuffer, QPointF, QRegExp
 from PyQt5.QtGui import QIntValidator, QImage, QPixmap, QRegExpValidator
-from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog, QMessageBox, QDialog
 
 from QPropertyLineEdit import QPropertyLineEdit
 from photoviewer import PhotoViewer
@@ -53,6 +53,8 @@ class Window(QtWidgets.QWidget):
         self.viewer.update_selected = self.selected_updated
 
         self.image = None
+        # transform encoded as (A,D,B,E,C,F) http://webhelp.esri.com/arcims/9.3/General/topics/author_world_files.htm
+        self.transform = None
         self.detect_fn = None
         self.database_manager = None
 
@@ -255,6 +257,26 @@ class Window(QtWidgets.QWidget):
         if file_name == '':
             return
 
+        # removes the file type (eg. .txt) from the path and adds .tfw
+        tfw_filename = os.path.splitext(file_name)[0] + ".tfw"
+        print(tfw_filename)
+        if not os.path.exists(tfw_filename):
+            tfw_filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', 'c:/',
+                                                                    "Tfw files (*.tfw)")
+        try:
+            tfw_file = open(tfw_filename, "r")
+            lines = tfw_file.readlines()
+            if len(lines) != 6:
+                raise Exception("tfw file has too many parameters")
+
+            self.transform = tuple([float(line) for line in lines])
+            print(self.transform)
+        except Exception:
+            self.transform = None
+            dlg = QDialog(self)
+            dlg.setWindowTitle("Invalid tfw file")
+            dlg.exec_()
+
         # todo maybe fix loading it twice, i tried really hard to get it to only work once but all the methods i
         # tried crashed mysteriously, even those in the pil library itself see toqpixmap()
         self.image = Image.open(file_name)
@@ -295,10 +317,7 @@ class Window(QtWidgets.QWidget):
                               QPointF(row['botrx'], row['botry']),
                               QPointF(row['botlx'], row['botly'])]
             width, height = self.viewer.pixmap_width_and_height()
-            adjusted_polygon_points = [coordmap.pixel_map(point,
-                                                          28.713230, -81.554677,
-                                                          28.718706, -81.547055,
-                                                          width, height) for point in polygon_coords]
+            adjusted_polygon_points = [coordmap.pixel_map(point, *self.transform) for point in polygon_coords]
             selection_polygon = SelectionPolygon(adjusted_polygon_points, self.viewer)
 
             self.viewer.add_selection_polygon(selection_polygon)
@@ -364,14 +383,8 @@ class Window(QtWidgets.QWidget):
 
         for polygon in self.viewer.selection_polygons:
             width, height = self.viewer.pixmap_width_and_height()
-            centroid = coordmap.coordinate_map(polygon.centroid(),
-                                               28.713230, -81.554677,
-                                               28.718706, -81.547055,
-                                               width, height)
-            adjusted_polygon_points = [coordmap.coordinate_map(point,
-                                                               28.713230, -81.554677,
-                                                               28.718706, -81.547055,
-                                                               width, height) for point in polygon.polygon_points]
+            centroid = coordmap.coordinate_map(polygon.centroid(), *self.transform)
+            adjusted_polygon_points = [coordmap.coordinate_map(point, *self.transform) for point in polygon.polygon_points]
 
             self.database_manager.add_entry(self.table_select.currentText(), polygon.id, polygon.row, polygon.col,
                                             toplx=adjusted_polygon_points[0].x(), toply=adjusted_polygon_points[0].y(),
@@ -391,14 +404,8 @@ class Window(QtWidgets.QWidget):
         geojson = {'type': 'FeatureCollection', 'name': self.table_select.currentText(), 'features': []}
         for polygon in self.viewer.selection_polygons:
             width, height = self.viewer.pixmap_width_and_height()
-            centroid = coordmap.coordinate_map(polygon.centroid(),
-                                               28.713230, -81.554677,
-                                               28.718706, -81.547055,
-                                               width, height)
-            adjusted_polygon_points = [coordmap.coordinate_map(point,
-                                                               28.713230, -81.554677,
-                                                               28.718706, -81.547055,
-                                                               width, height) for point in polygon.polygon_points]
+            centroid = coordmap.coordinate_map(polygon.centroid(), *self.transform)
+            adjusted_polygon_points = [coordmap.coordinate_map(point, *self.transform) for point in polygon.polygon_points]
             feature = {'type': 'Feature', 'properties': {}, 'geometry': {'type': 'MultiPolygon', 'coordinates': []}}
             feature['geometry']['coordinates'] = [
                 [adjusted_polygon_points[0].x(), adjusted_polygon_points[0].y()],
