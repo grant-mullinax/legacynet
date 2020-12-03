@@ -411,12 +411,12 @@ class Window(QtWidgets.QWidget):
             centroid = coordmap.coordinate_map(polygon.centroid(), *self.transform)
             adjusted_polygon_points = [coordmap.coordinate_map(point, *self.transform) for point in polygon.polygon_points]
             feature = {'type': 'Feature', 'properties': {}, 'geometry': {'type': 'MultiPolygon', 'coordinates': []}}
-            feature['geometry']['coordinates'] = [
+            feature['geometry']['coordinates'] = [[[
                 [adjusted_polygon_points[0].x(), adjusted_polygon_points[0].y()],
                 [adjusted_polygon_points[1].x(), adjusted_polygon_points[1].y()],
                 [adjusted_polygon_points[2].x(), adjusted_polygon_points[2].y()],
                 [adjusted_polygon_points[3].x(), adjusted_polygon_points[3].y()],
-                [adjusted_polygon_points[0].x(), adjusted_polygon_points[0].y()]]
+                [adjusted_polygon_points[0].x(), adjusted_polygon_points[0].y()]]]]
             feature['properties']['id'] = polygon.id
             feature['properties']['row'] = polygon.row
             feature['properties']['col'] = polygon.col
