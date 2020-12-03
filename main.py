@@ -5,9 +5,9 @@ import os
 
 from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QBuffer, QPointF, QRegExp
+from PyQt5.QtCore import Qt, QBuffer, QPointF, QRegExp, QCoreApplication
 from PyQt5.QtGui import QIntValidator, QImage, QPixmap, QRegExpValidator
-from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog, QMessageBox, QDialog
+from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog, QMessageBox, QDialog, QProgressDialog
 
 from QPropertyLineEdit import QPropertyLineEdit
 from photoviewer import PhotoViewer
@@ -427,6 +427,17 @@ class Window(QtWidgets.QWidget):
             json.dump(geojson, output_file, indent=2)
 
     def detect_gravestones(self):
+        # Open progress dialogue
+        progress = QProgressDialog("Loading detection model...", None, 0, 100)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setAutoClose(True)
+        progress.setMinimumDuration(1000)
+        progress.setValue(0)
+        progress.show()
+
+        # Refresh GUI to display modal
+        QCoreApplication.processEvents()
+
         if self.detect_fn is None:
             try:
                 self.detect_fn = tf.saved_model.load(self.saved_model_path)
@@ -436,15 +447,18 @@ class Window(QtWidgets.QWidget):
 
         width, height = self.image.size
 
+        # Update progress GUI
+        progress.setLabelText("Filtering input image...")
+
         # Make the crops
         image_cuts = image_cut.crop_image_with_padding((320, 320), 300, self.image)
 
         # Run model on image crops
-        print(f'Running inferences...')
+        progress.setLabelText("Detecting headstones...")
         detections = inference.detect_and_combine(self.detect_fn, image_cuts,
                                                   (width, height), 300,
                                                   self.confidence_threshold,
-                                                  self.iou_threshold)
+                                                  self.iou_threshold, progress)
 
         for box in detections['detection_boxes']:
             polygon_coords = [QPointF(box[1] * width, box[0] * height),

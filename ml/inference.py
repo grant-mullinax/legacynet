@@ -113,17 +113,18 @@ def find_scaled_boxes_from_crop(crop_image: Image, index: tuple,
 def detect_and_combine(detect_fn: Callable, image_cuts: list,
                        full_img_size: tuple, stride: int,
                        score_threshold: float,
-                       iou_threshold: float) -> dict:
+                       iou_threshold: float, 
+                       progress_dialog: QProgressDialog) -> dict:
     ''' Run detections on all image cuts, combine the results into a single dict '''
     # This can be hardcoded, since we are only concerned with a single class
     category_index = {0: 1}
 
     # Open progress dialogue
-    progress = QProgressDialog("Detecting headstones...", None, 0, 100)
-    progress.setWindowModality(Qt.WindowModal)
-    progress.setAutoClose(True)
-    progress.setMinimumDuration(1000)
-    progress.setValue(0)
+    # progress = QProgressDialog("Detecting headstones...", None, 0, 100)
+    # progress.setWindowModality(Qt.WindowModal)
+    # progress.setAutoClose(True)
+    # progress.setMinimumDuration(1000)
+    # progress.setValue(0)
     
     # Dialog isn't appearing without this
     QCoreApplication.processEvents()
@@ -137,8 +138,8 @@ def detect_and_combine(detect_fn: Callable, image_cuts: list,
             # Dialog isn't appearing without this
             QCoreApplication.processEvents()
             pr_p = math.floor((((i) * cols + (j+1)) / (rows * cols)) * 100)
-            progress.setValue(pr_p)
-            if progress.wasCanceled():
+            progress_dialog.setValue(pr_p)
+            if progress_dialog.wasCanceled():
                 break
             print(f'Running on cut [{i}][{j}]...')
             d, flag = find_scaled_boxes_from_crop(image_cuts[i][j], (i, j),
@@ -148,7 +149,7 @@ def detect_and_combine(detect_fn: Callable, image_cuts: list,
                 full_detections.append(d)
 
     # progress.setValue(100)
-    del progress
+    del progress_dialog
 
     # Fold detections
     final_detections = reduce(fold_detections, full_detections)
