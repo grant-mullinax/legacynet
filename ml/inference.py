@@ -119,7 +119,7 @@ def detect_and_combine(detect_fn: Callable, image_cuts: list,
     category_index = {0: 1}
 
     # Open progress dialogue
-    progress = QProgressDialog("Running inference...", None, 0, 100)
+    progress = QProgressDialog("Detecting headstones...", None, 0, 100)
     progress.setWindowModality(Qt.WindowModal)
     progress.setAutoClose(True)
     progress.setMinimumDuration(1000)
