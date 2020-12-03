@@ -1,7 +1,14 @@
 """ Runs inference on a list of images from saved_model and scales the bounding boxes """
 
+from PIL.ImageQt import ImageQt, toqpixmap
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt, QBuffer, QPointF, QRegExp, QCoreApplication
+from PyQt5.QtGui import QIntValidator, QImage, QPixmap, QRegExpValidator
+from PyQt5.QtWidgets import QSizePolicy, QLineEdit, QComboBox, QInputDialog, QMessageBox, QDialog, QProgressDialog
+
 import sys
 import os
+import math
 # os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 import tensorflow as tf
 import numpy as np
@@ -111,16 +118,37 @@ def detect_and_combine(detect_fn: Callable, image_cuts: list,
     # This can be hardcoded, since we are only concerned with a single class
     category_index = {0: 1}
 
+    # Open progress dialogue
+    progress = QProgressDialog("Running inference...", None, 0, 100)
+    progress.setWindowModality(Qt.WindowModal)
+    progress.setAutoClose(True)
+    progress.setMinimumDuration(1000)
+    progress.setValue(0)
+    
+    # Dialog isn't appearing without this
+    QCoreApplication.processEvents()
+
     # Perform detections
     full_detections = []
+    rows = len(image_cuts)
+    cols = len(image_cuts[0])
     for i, row in enumerate(image_cuts):
         for j, col in enumerate(row):
+            # Dialog isn't appearing without this
+            QCoreApplication.processEvents()
+            pr_p = math.floor((((i) * cols + (j+1)) / (rows * cols)) * 100)
+            progress.setValue(pr_p)
+            if progress.wasCanceled():
+                break
             print(f'Running on cut [{i}][{j}]...')
             d, flag = find_scaled_boxes_from_crop(image_cuts[i][j], (i, j),
                                                   full_img_size, stride,
                                                   detect_fn, score_threshold)
             if flag:
                 full_detections.append(d)
+
+    # progress.setValue(100)
+    del progress
 
     # Fold detections
     final_detections = reduce(fold_detections, full_detections)
