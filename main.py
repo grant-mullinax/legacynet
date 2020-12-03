@@ -88,6 +88,10 @@ class Window(QtWidgets.QWidget):
         # Discard boxes above this intersection over union threshold
         self.iou_threshold = float(settings.get('iou_threshold', "0.15"))
 
+        # Saved model path to use
+        # Should be a directory containing saved_model.pb
+        self.saved_model_path = settings.get('saved_model_path', 'ml/final_trained_model/saved_model')
+
     def _create_left_layout(self) -> None:
         ''' Build left layout '''
         self.vert_left_layout = QtWidgets.QVBoxLayout()
@@ -424,9 +428,11 @@ class Window(QtWidgets.QWidget):
 
     def detect_gravestones(self):
         if self.detect_fn is None:
-            saved_model_path = 'ml/run9/saved_model'
-            self.detect_fn = tf.saved_model.load(saved_model_path)
-        print("model loaded!")
+            try:
+                self.detect_fn = tf.saved_model.load(self.saved_model_path)
+            except ValueError:
+                print(f"Error loading saved model: {self.saved_model_path}")
+        print("Model loaded!")
 
         width, height = self.image.size
 
