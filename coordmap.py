@@ -11,11 +11,11 @@ def pixel_map(coordinate, a, d, b, e, c, f):  # this is the order of the params 
     # y1 = Dx + Ey + F
     #
     # for x and y
-    # x = (-e/b * (x1 - c) + y1 - f)/(-e*a/b + d)
-    # y = (x1 - c - Ax)/B
+    x1 = coordinate.x()
+    y1 = coordinate.y()
+    x = (-(b*f) + (b*y1) + (c*e) - (e * x1))/-(a*e) + (b*d)
+    y = (-(d*c) + (d*x1) + (a*f) - (a * y1))/-(a*e) + (b*d)
 
-    x = (-e/b * (coordinate.x() - c) + coordinate.y() - f)/(-e*a/b + d)
-    y = (coordinate.x() - c - a * x)/b
     return QPointF(x, y)
 
 
