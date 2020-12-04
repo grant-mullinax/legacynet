@@ -429,6 +429,7 @@ class Window(QtWidgets.QWidget):
     def detect_gravestones(self):
         # Open progress dialogue
         progress = QProgressDialog("Loading detection model...", None, 0, 100)
+        progress.setWindowTitle("Loading")
         progress.setWindowModality(Qt.WindowModal)
         progress.setAutoClose(True)
         progress.setMinimumDuration(1000)
