@@ -208,10 +208,10 @@ class PhotoViewer(QtWidgets.QGraphicsView):
                     line[0] - line[1])
 
                 if distance_from_line <= max_dist:
-                    min_x = min(photo_click_point.x(), self.start_line_select.x()) * .95
-                    max_x = max(photo_click_point.x(), self.start_line_select.x()) * 1.05
-                    min_y = min(photo_click_point.y(), self.start_line_select.y()) * .95
-                    max_y = max(photo_click_point.y(), self.start_line_select.x()) * 1.05
+                    min_x = min(photo_click_point.x(), self.start_line_select.x())
+                    max_x = max(photo_click_point.x(), self.start_line_select.x())
+                    min_y = min(photo_click_point.y(), self.start_line_select.y())
+                    max_y = max(photo_click_point.y(), self.start_line_select.x())
                     if min_x < centroid.x() < max_x and min_y < centroid.y() < max_y:
                         polygon.select()
 

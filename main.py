@@ -72,6 +72,8 @@ class Window(QtWidgets.QWidget):
         grid_layout.addWidget(self.viewer, 0, 1)
         grid_layout.addLayout(self.vert_right_layout, 0, 3)
 
+        self.detect_fn = tf.saved_model.load(self.saved_model_path)
+
         # Disable UI buttons
         for button in self.enable_on_load:
             button.setEnabled(False)
