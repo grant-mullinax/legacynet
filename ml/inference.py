@@ -1,4 +1,4 @@
-""" Runs inference on a list of images from saved_model and scales the bounding boxes """
+""" Contains the necessary functions to run the inference on image crops and scale the results """
 
 from PIL.ImageQt import ImageQt, toqpixmap
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -15,7 +15,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 from typing import Callable
-from object_detection.utils import visualization_utils as viz_utils
 from functools import reduce
 
 
@@ -188,65 +187,3 @@ def non_maximum_supression(detections: dict, threshold: float) -> dict:
                                                selected_indices).numpy()
 
     return detections
-
-
-def visualize_boxes_on_full_image(image: Image, detections: dict) -> None:
-    ''' For testing '''
-
-    print('Visualizing...')
-
-    # Load full image into np array
-    image_np = np.array(image)
-
-    # Display bounding boxes
-    image_np_with_detections = image_np.copy()
-    viz_utils.visualize_boxes_and_labels_on_image_array(
-        image_np_with_detections,
-        detections['detection_boxes'],
-        detections['detection_classes'],
-        detections['detection_scores'],
-        {0: 1
-         },  # Hardcoded category_index, since we are concerned with 1 class
-        use_normalized_coordinates=True,
-        max_boxes_to_draw=50000,
-        min_score_thresh=.35,
-        skip_labels=True,
-        skip_scores=True,
-        agnostic_mode=False)
-    plt.figure()
-    plt.imshow(image_np_with_detections)
-    plt.savefig('full_inference.jpg')
-    print('Done! File saved.')
-
-
-def main():
-    ''' For testing, run inference on a single provided image '''
-    score_threshold = 0.30
-
-    # Open image
-    print(f'Opening {sys.argv[1]} ...')
-    image_path = sys.argv[1]
-    image = Image.open(image_path)
-
-    # Load labels
-    category_index = {0: 1}
-
-    # Load model
-    print(f'Loading model from {sys.argv[2]} ...')
-    saved_model_path = sys.argv[2] + '/saved_model'
-    detect_fn = tf.saved_model.load(saved_model_path)
-
-    print('Running inference...')
-    find_scaled_boxes_from_crop(
-        image,  # PIL image
-        (0, 3),  # 2-dimensional index of this crop
-        (2023, 1218),  # Size of full, uncropped image
-        300,  # Stride 
-        detect_fn,  # TensorFlow inference function
-        score_threshold,  # Threshold to cull boxes
-    )
-
-
-if __name__ == '__main__':
-    # For testing
-    main()
