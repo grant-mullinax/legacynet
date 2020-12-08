@@ -6,6 +6,8 @@ This program uses machine learning to detect visible headstones in a TIFF image,
 and calculates the latitude and logitude of each headstone automatically based on the associated world file.
 The user can then export this data to GeoJSON format and into a SQLite database.
 
+This project won Best in Show in the Fall 2020 UCF Senior Design Showcase.
+
 Created by:
 Alec Kerrigan, Nick Evans, Maleah Jamieson, Grant Mullinax, Nicolas Soto
 
