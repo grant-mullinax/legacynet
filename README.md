@@ -18,7 +18,7 @@ Sponsored by: Dr. Amy Giroux
 The `environment.yml` file is the exported conda environment that we used to run the application. To install:
 
 ```shell
-conda env create --file environment.yml
+conda env create --file LegacyNet.yml
 ```
 This will create a new environment named LegacyNet, and will begin installing all the required dependencies.
 
